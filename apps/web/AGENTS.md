@@ -1,0 +1,2 @@
+- 以antd为主，然后少量的unocss为辅助
+- 需要适配dark、light，界面考虑pc、平板和h5的适配，优先考虑pc

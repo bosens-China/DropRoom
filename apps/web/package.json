@@ -1,0 +1,50 @@
+{
+  "name": "@droproom/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "pnpm -w exec eslint --config apps/web/eslint.config.js apps/web",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.3.2",
+    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-router": "^1.170.18",
+    "ahooks": "^3.9.7",
+    "antd": "^6.5.1",
+    "hono": "^4.12.30",
+    "p-limit": "^7.3.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@droproom/api": "workspace:*",
+    "@eslint/js": "^10.0.1",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@tanstack/router-plugin": "^1.168.20",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@unocss/reset": "^66.7.5",
+    "@unocss/vite": "^66.7.5",
+    "@vitejs/plugin-react": "^6.0.3",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^10.6.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "jsdom": "^26.1.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.62.0",
+    "unocss": "^66.7.5",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  }
+}

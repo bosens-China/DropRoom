@@ -1,0 +1,34 @@
+{
+  "name": "@droproom/api",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "clean": "node --eval \"import('node:fs').then(({ rmSync }) => rmSync('dist', { recursive: true, force: true }))\"",
+    "build": "pnpm clean && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "pnpm -w exec eslint --config apps/api/eslint.config.js apps/api",
+    "start": "tsx src/index.ts"
+  },
+  "exports": {
+    "./app": "./src/api/app.ts",
+    "./domain": "./src/room/domain.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.10",
+    "@hono/swagger-ui": "^0.6.1",
+    "@hono/zod-openapi": "^1.5.1",
+    "dotenv": "^17.4.2",
+    "hono": "^4.12.30",
+    "pino": "^10.3.1",
+    "redis": "^6.1.0",
+    "tsx": "^4.23.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

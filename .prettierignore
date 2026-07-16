@@ -1,0 +1,8 @@
+.codebase-memory
+dist
+node_modules
+pnpm-lock.yaml
+*.png
+*.svg
+.agents
+apps/web/src/routeTree.gen.ts
