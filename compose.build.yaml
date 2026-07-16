@@ -1,0 +1,53 @@
+name: droproom-build
+
+services:
+  web:
+    image: boses/droproom-web:local
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runner
+    ports:
+      - '48080:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+
+  api:
+    image: boses/droproom-api:local
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runner
+    environment:
+      NODE_ENV: production
+      DROPROOM_CORS_ORIGINS: http://localhost:48080
+      DROPROOM_REDIS_URL: redis://redis:6379
+      DROPROOM_STORAGE_ROOT: /app/storage
+    ports:
+      - '43117:43117'
+    volumes:
+      - droproom-api-storage:/app/storage
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:8-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --appendfsync
+      - everysec
+    volumes:
+      - droproom-redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  droproom-api-storage:
+  droproom-redis-data:

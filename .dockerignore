@@ -1,0 +1,14 @@
+.git
+.github
+.agents
+.codebase-memory
+.DS_Store
+.env
+.env.*
+node_modules
+**/node_modules
+dist
+**/dist
+coverage
+**/coverage
+*.log

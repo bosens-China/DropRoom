@@ -1,0 +1,51 @@
+name: droproom
+
+services:
+  web:
+    image: boses/droproom-web:${DROPROOM_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - '${DROPROOM_WEB_BIND:-127.0.0.1}:${DROPROOM_WEB_PORT:-48080}:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+
+  api:
+    image: boses/droproom-api:${DROPROOM_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DROPROOM_CORS_ORIGINS: ${DROPROOM_CORS_ORIGINS:?请填写 HTTPS Web 来源}
+      DROPROOM_REDIS_URL: redis://redis:6379
+      DROPROOM_STORAGE_ROOT: /app/storage
+      DROPROOM_GLOBAL_FILE_BYTES: ${DROPROOM_GLOBAL_FILE_BYTES:-20000000000}
+      DROPROOM_LOG_LEVEL: ${DROPROOM_LOG_LEVEL:-info}
+      DROPROOM_OPENAPI_ENABLED: ${DROPROOM_OPENAPI_ENABLED:-false}
+    expose:
+      - '43117'
+    volumes:
+      - droproom-api-storage:/app/storage
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --appendfsync
+      - everysec
+    volumes:
+      - droproom-redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  droproom-api-storage:
+  droproom-redis-data:
