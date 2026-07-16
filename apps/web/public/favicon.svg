@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="DropRoom">
+  <defs>
+    <linearGradient id="blue-door" x1="59" y1="50" x2="160" y2="182" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#69B1FF" />
+      <stop offset="1" stop-color="#1677FF" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M75 174H62C53.163 174 46 166.837 46 158V66C46 57.163 53.163 50 62 50H132C140.837 50 148 57.163 148 66V76"
+    fill="none"
+    stroke="url(#blue-door)"
+    stroke-width="16"
+    stroke-linecap="round"
+  />
+  <path
+    d="M100 126V92C100 83.163 107.163 76 116 76H174C182.837 76 190 83.163 190 92V158C190 166.837 182.837 174 174 174H116C107.163 174 100 166.837 100 158V126Z"
+    fill="#FFF7E6"
+    stroke="#FA8C16"
+    stroke-width="16"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M70 125H150M132 107L150 125L132 143"
+    fill="none"
+    stroke="#0F172A"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="175" cy="125" r="6" fill="#0F172A" />
+</svg>
