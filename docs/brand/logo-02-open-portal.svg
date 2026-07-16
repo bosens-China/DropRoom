@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200" viewBox="0 0 640 200" role="img" aria-labelledby="title desc">
+  <title id="title">DropRoom Logo 方案二：开放传送门</title>
+  <desc id="desc">两个交叠的开放门框组成传送通道，表达多人和多设备之间的双向流动。</desc>
+  <defs>
+    <linearGradient id="blue-door" x1="35" y1="30" x2="136" y2="162" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#69B1FF"/>
+      <stop offset="1" stop-color="#1677FF"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(24 20)">
+    <path d="M51 154H38C29.163 154 22 146.837 22 138V46C22 37.163 29.163 30 38 30H108C116.837 30 124 37.163 124 46V56"
+          fill="none" stroke="url(#blue-door)" stroke-width="16" stroke-linecap="round"/>
+    <path d="M76 106V72C76 63.163 83.163 56 92 56H150C158.837 56 166 63.163 166 72V138C166 146.837 158.837 154 150 154H92C83.163 154 76 146.837 76 138V106Z"
+          fill="#FFF7E6" stroke="#FA8C16" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M46 105H126M108 87L126 105L108 123" fill="none" stroke="#0F172A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="151" cy="105" r="6" fill="#0F172A"/>
+  </g>
+
+  <g transform="translate(226 0)">
+    <text x="0" y="113" fill="#0F172A"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="64" font-weight="800" letter-spacing="-3">Drop</text>
+    <text x="143" y="113" fill="#1677FF"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="64" font-weight="800" letter-spacing="-3">Room</text>
+    <text x="3" y="146" fill="#64748B"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="16" font-weight="600" letter-spacing="3">ONE ROOM · MANY DEVICES</text>
+  </g>
+</svg>

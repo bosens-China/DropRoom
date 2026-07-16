@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200" viewBox="0 0 640 200" role="img" aria-labelledby="title desc">
+  <title id="title">DropRoom Logo 方案三：八位房间码</title>
+  <desc id="desc">八个圆角码点围成临时房间，中间的投递箭头强调通过房间码快速共享。</desc>
+  <defs>
+    <linearGradient id="code" x1="38" y1="25" x2="165" y2="165" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4096FF"/>
+      <stop offset="1" stop-color="#0958D9"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(24 20)">
+    <rect x="24" y="24" width="42" height="42" rx="13" fill="url(#code)"/>
+    <rect x="79" y="24" width="42" height="42" rx="13" fill="url(#code)"/>
+    <rect x="134" y="24" width="42" height="42" rx="13" fill="url(#code)"/>
+    <rect x="24" y="79" width="42" height="42" rx="13" fill="url(#code)"/>
+    <rect x="134" y="79" width="42" height="42" rx="13" fill="url(#code)"/>
+    <rect x="24" y="134" width="42" height="42" rx="13" fill="url(#code)"/>
+    <rect x="79" y="134" width="42" height="42" rx="13" fill="url(#code)"/>
+    <rect x="134" y="134" width="42" height="42" rx="13" fill="url(#code)"/>
+    <path d="M100 80V116M83 100L100 117L117 100" fill="none" stroke="#FA8C16" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(226 0)">
+    <text x="0" y="113" fill="#0F172A"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="64" font-weight="800" letter-spacing="-3">Drop</text>
+    <text x="143" y="113" fill="#1677FF"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="64" font-weight="800" letter-spacing="-3">Room</text>
+    <text x="3" y="146" fill="#64748B"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="16" font-weight="600" letter-spacing="3">8 DIGITS · 24 HOURS · ZERO ACCOUNTS</text>
+  </g>
+</svg>

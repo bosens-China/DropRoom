@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200" viewBox="0 0 640 200" role="img" aria-labelledby="title desc">
+  <title id="title">DropRoom Logo 方案一：落入房间</title>
+  <desc id="desc">文件卡片落入一个开放的临时房间，表达快速投递与短暂存放。</desc>
+  <defs>
+    <linearGradient id="room" x1="34" y1="40" x2="158" y2="164" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4096FF"/>
+      <stop offset="1" stop-color="#0958D9"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(24 20)">
+    <path d="M34 74V132C34 149.673 48.327 164 66 164H130C147.673 164 162 149.673 162 132V74"
+          fill="none" stroke="url(#room)" stroke-width="16" stroke-linecap="round"/>
+    <path d="M64 34C64 25.163 71.163 18 80 18H111L136 43V91C136 99.837 128.837 107 120 107H80C71.163 107 64 99.837 64 91V34Z"
+          fill="#E6F4FF"/>
+    <path d="M111 18V37C111 40.314 113.686 43 117 43H136" fill="none" stroke="#1677FF" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M82 18H111L136 43V91C136 99.837 128.837 107 120 107H80C71.163 107 64 99.837 64 91V34C64 25.163 71.163 18 80 18H82Z"
+          fill="none" stroke="#1677FF" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M100 55V86M86 73L100 87L114 73" fill="none" stroke="#FA8C16" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(226 0)">
+    <text x="0" y="113" fill="#0F172A"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="64" font-weight="800" letter-spacing="-3">Drop</text>
+    <text x="143" y="113" fill="#1677FF"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="64" font-weight="800" letter-spacing="-3">Room</text>
+    <text x="3" y="146" fill="#64748B"
+          font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          font-size="16" font-weight="600" letter-spacing="3">DROP IN · SHARE · DISAPPEAR</text>
+  </g>
+</svg>
