@@ -41,18 +41,16 @@ export function RoomHeader({
   onOpenMembers,
 }: RoomHeaderProps) {
   const isOwner = room.ownerMemberId === myId;
-  const remainingSize = Math.max(
-    0,
-    room.maxFileBytes - room.usedBytes - room.reservedBytes,
+  const occupiedSize = Math.min(
+    room.maxFileBytes,
+    room.usedBytes + room.reservedBytes,
   );
-  const remainingPercent = Math.round(
-    (remainingSize / room.maxFileBytes) * 100,
-  );
+  const occupiedPercent = Math.round((occupiedSize / room.maxFileBytes) * 100);
 
   const storageColor =
-    remainingPercent > 30
+    occupiedPercent < 70
       ? DR_PRIMARY
-      : remainingPercent > 10
+      : occupiedPercent < 90
         ? '#faad14'
         : '#ff4d4f';
 
@@ -117,28 +115,29 @@ export function RoomHeader({
             </button>
           </div>
 
-          <div className="hidden sm:block w-28 lg:w-36 shrink-0">
-            <div className="flex items-center justify-between text-[11px] mb-1">
-              <span className="text-[var(--dr-text-muted)]">剩余</span>
-              <span className="font-medium" style={{ color: storageColor }}>
-                {formatFileSize(remainingSize)}
-              </span>
+          <div className="hidden sm:flex w-44 lg:w-56 shrink-0 items-center gap-2.5">
+            <div className="min-w-0 flex-1">
+              <Progress
+                percent={occupiedPercent}
+                showInfo={false}
+                size="small"
+                strokeColor={storageColor}
+                trailColor="var(--dr-border)"
+              />
             </div>
-            <Progress
-              percent={remainingPercent}
-              showInfo={false}
-              size="small"
-              strokeColor={storageColor}
-              trailColor="var(--dr-border)"
-            />
+            <span className="shrink-0 whitespace-nowrap font-mono text-[11px] text-[var(--dr-text-muted)]">
+              {formatFileSize(occupiedSize)} /{' '}
+              {formatFileSize(room.maxFileBytes)}
+            </span>
           </div>
 
           <RoomCountdownRing room={room} timeLeft={timeLeft} />
 
           <Button
+            type="text"
             icon={<LogoutOutlined />}
             onClick={onExit}
-            className="shrink-0 text-[var(--dr-text-muted)] hover:text-[var(--dr-primary)] hover:border-[var(--dr-primary)] !h-9"
+            className="shrink-0 rounded-xl text-[var(--dr-text-muted)] hover:text-[var(--dr-primary)] !h-10 !px-2.5 sm:!px-3"
           >
             <span className="hidden sm:inline">退出</span>
           </Button>
@@ -148,28 +147,27 @@ export function RoomHeader({
               <Button
                 type="text"
                 icon={<MoreOutlined />}
-                className="text-[var(--dr-text-muted)] shrink-0 !w-9 !h-9"
+                className="text-[var(--dr-text-muted)] shrink-0 rounded-xl !w-10 !h-10"
                 aria-label="更多操作"
               />
             </Dropdown>
           )}
         </div>
 
-        {/* 移动端：剩余空间条 */}
-        <div className="sm:hidden mt-2">
-          <div className="flex items-center justify-between text-[10px] mb-1">
-            <span className="text-[var(--dr-text-muted)]">剩余空间</span>
-            <span className="font-medium" style={{ color: storageColor }}>
-              {formatFileSize(remainingSize)}
-            </span>
+        {/* 移动端：容量占用进度 */}
+        <div className="sm:hidden mt-2 flex items-center gap-2.5">
+          <div className="min-w-0 flex-1">
+            <Progress
+              percent={occupiedPercent}
+              showInfo={false}
+              size="small"
+              strokeColor={storageColor}
+              trailColor="var(--dr-border)"
+            />
           </div>
-          <Progress
-            percent={remainingPercent}
-            showInfo={false}
-            size="small"
-            strokeColor={storageColor}
-            trailColor="var(--dr-border)"
-          />
+          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[var(--dr-text-muted)]">
+            {formatFileSize(occupiedSize)} / {formatFileSize(room.maxFileBytes)}
+          </span>
         </div>
       </div>
     </div>

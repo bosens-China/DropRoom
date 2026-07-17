@@ -7,7 +7,7 @@ interface RoomCountdownRingProps {
   timeLeft: number;
 }
 
-/** 房间存续圆环倒计时：随时间减少 */
+/** 房间存续倒计时：进度轨道随时间缩短 */
 export function RoomCountdownRing({ room, timeLeft }: RoomCountdownRingProps) {
   const totalSeconds = Math.max(
     1,
@@ -26,22 +26,26 @@ export function RoomCountdownRing({ room, timeLeft }: RoomCountdownRingProps) {
 
   return (
     <Tooltip title={`房间剩余 ${formatDurationCompact(timeLeft)}`}>
-      <Progress
-        type="circle"
-        percent={percent}
-        size={48}
-        strokeWidth={10}
-        strokeColor={strokeColor}
-        trailColor="var(--dr-border)"
-        format={() => (
-          <span
-            className="text-[10px] font-mono font-medium leading-none"
-            style={{ color: strokeColor }}
-          >
-            {formatDurationCompact(timeLeft)}
-          </span>
-        )}
-      />
+      <div
+        className="flex shrink-0 items-center gap-2"
+        aria-label={`房间剩余 ${formatDurationCompact(timeLeft)}`}
+      >
+        <div className="hidden w-12 lg:block">
+          <Progress
+            percent={percent}
+            showInfo={false}
+            size="small"
+            strokeColor={strokeColor}
+            trailColor="var(--dr-border)"
+          />
+        </div>
+        <span
+          className="min-w-[2.75rem] whitespace-nowrap text-right font-mono text-[11px] font-medium"
+          style={{ color: strokeColor }}
+        >
+          {formatDurationCompact(timeLeft)}
+        </span>
+      </div>
     </Tooltip>
   );
 }
