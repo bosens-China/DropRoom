@@ -1,141 +1,174 @@
-import { Button, Tooltip } from 'antd';
-import { CopyOutlined, EditOutlined, LogoutOutlined } from '@ant-design/icons';
-import type { RoomSnapshot } from '@droproom/api/domain';
+import { Button, Dropdown, Progress, Tooltip } from 'antd';
+import type { MenuProps } from 'antd';
 import {
-  formatDuration,
-  formatFileSize,
-  formatRoomCode,
-} from '../../utils/format';
+  CopyOutlined,
+  EditOutlined,
+  LogoutOutlined,
+  MoreOutlined,
+  StopOutlined,
+  TeamOutlined,
+} from '@ant-design/icons';
+import type { RoomSnapshot } from '@droproom/api/domain';
+import { DR_PRIMARY } from '../../constants/theme';
+import { formatFileSize, formatRoomCode } from '../../utils/format';
+import { RoomCountdownRing } from './RoomCountdownRing';
 
 interface RoomHeaderProps {
   room: RoomSnapshot;
   roomId: string;
   myId: string;
   timeLeft: number;
-  onCopyInvite: () => void;
+  memberCount: number;
+  onCopyInviteLink: () => void;
   onEditRoomName: () => void;
   onDissolve: () => void;
   onExit: () => void;
+  /** 移动端打开成员侧栏 */
+  onOpenMembers?: () => void;
 }
 
-/** 当前房间顶部信息：名称、房间码、容量、倒计时 */
+/** 房间顶栏：名称、房间码、剩余空间、圆环倒计时 */
 export function RoomHeader({
   room,
   roomId,
   myId,
   timeLeft,
-  onCopyInvite,
+  memberCount,
+  onCopyInviteLink,
   onEditRoomName,
   onDissolve,
   onExit,
+  onOpenMembers,
 }: RoomHeaderProps) {
   const isOwner = room.ownerMemberId === myId;
-  const usedPercent = Math.min(100, (room.usedBytes / room.maxFileBytes) * 100);
-  const occupiedPercent = Math.min(
-    100,
-    (room.reservedBytes / room.maxFileBytes) * 100,
-  );
   const remainingSize = Math.max(
     0,
     room.maxFileBytes - room.usedBytes - room.reservedBytes,
   );
+  const remainingPercent = Math.round(
+    (remainingSize / room.maxFileBytes) * 100,
+  );
+
+  const storageColor =
+    remainingPercent > 30
+      ? DR_PRIMARY
+      : remainingPercent > 10
+        ? '#faad14'
+        : '#ff4d4f';
+
+  const moreItems: MenuProps['items'] = isOwner
+    ? [
+        {
+          key: 'dissolve',
+          icon: <StopOutlined />,
+          label: '解散房间',
+          danger: true,
+          onClick: onDissolve,
+        },
+      ]
+    : [];
 
   return (
-    <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 bg-white border-b border-slate-100">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        {/* 房间名称与码 */}
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-base sm:text-lg font-bold text-slate-800 truncate">
-              {room.name}
-            </h1>
-            {isOwner && (
-              <Tooltip title="修改房间名称">
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={onEditRoomName}
-                  className="text-slate-400 shrink-0"
-                />
-              </Tooltip>
-            )}
+    <div className="shrink-0 dr-surface border-b dr-safe-inline dr-safe-top">
+      <div className="px-3 sm:px-4 py-2.5 sm:py-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {onOpenMembers && (
+            <Button
+              type="text"
+              icon={<TeamOutlined />}
+              onClick={onOpenMembers}
+              className="md:hidden shrink-0 text-[var(--dr-text-muted)] !w-9 !h-9"
+              aria-label="打开成员列表"
+            />
+          )}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-sm sm:text-base font-semibold truncate">
+                {room.name}
+              </h1>
+              {isOwner && (
+                <Tooltip title="修改房间名称">
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={onEditRoomName}
+                    className="text-[var(--dr-text-muted)] shrink-0 !w-7 !h-7"
+                  />
+                </Tooltip>
+              )}
+              <span className="text-[11px] text-[var(--dr-text-muted)] shrink-0">
+                {memberCount} 人
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={onCopyInviteLink}
+              title="复制邀请链接"
+              aria-label={`复制房间 ${formatRoomCode(roomId)} 的邀请链接`}
+              className="flex items-center gap-1 mt-0.5 border-none bg-transparent p-0 cursor-pointer group"
+            >
+              <span className="text-[11px] text-[var(--dr-text-muted)] font-mono group-hover:text-[var(--dr-primary)] transition-colors">
+                {formatRoomCode(roomId)}
+              </span>
+              <CopyOutlined className="text-[9px] text-[var(--dr-text-muted)] group-hover:text-[var(--dr-primary)]" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onCopyInvite}
-            title="复制邀请链接"
-            className="flex items-center gap-1.5 mt-0.5 border-none bg-transparent p-0 cursor-pointer group"
+
+          <div className="hidden sm:block w-28 lg:w-36 shrink-0">
+            <div className="flex items-center justify-between text-[11px] mb-1">
+              <span className="text-[var(--dr-text-muted)]">剩余</span>
+              <span className="font-medium" style={{ color: storageColor }}>
+                {formatFileSize(remainingSize)}
+              </span>
+            </div>
+            <Progress
+              percent={remainingPercent}
+              showInfo={false}
+              size="small"
+              strokeColor={storageColor}
+              trailColor="var(--dr-border)"
+            />
+          </div>
+
+          <RoomCountdownRing room={room} timeLeft={timeLeft} />
+
+          <Button
+            icon={<LogoutOutlined />}
+            onClick={onExit}
+            className="shrink-0 text-[var(--dr-text-muted)] hover:text-[var(--dr-primary)] hover:border-[var(--dr-primary)] !h-9"
           >
-            <span className="text-xs text-slate-400 font-mono group-hover:text-blue-500 transition-colors">
-              {formatRoomCode(roomId)}
-            </span>
-            <CopyOutlined className="text-[10px] text-slate-300 group-hover:text-blue-400" />
-          </button>
+            <span className="hidden sm:inline">退出</span>
+          </Button>
+
+          {isOwner && (
+            <Dropdown menu={{ items: moreItems }} trigger={['hover', 'click']}>
+              <Button
+                type="text"
+                icon={<MoreOutlined />}
+                className="text-[var(--dr-text-muted)] shrink-0 !w-9 !h-9"
+                aria-label="更多操作"
+              />
+            </Dropdown>
+          )}
         </div>
 
-        {/* 房间级状态：容量 + 倒计时 */}
-        <div className="flex items-center gap-4 sm:gap-6 shrink-0">
-          <div className="min-w-[160px]">
-            <div className="flex items-center justify-between gap-3 text-[10px] text-slate-400 mb-1">
-              <span>已用 {formatFileSize(room.usedBytes)}</span>
-              <span>剩余 {formatFileSize(remainingSize)}</span>
-            </div>
-            <div className="relative h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="absolute inset-y-0 left-0 bg-blue-500 rounded-full"
-                style={{ width: `${usedPercent}%` }}
-              />
-              <div
-                className="absolute inset-y-0 bg-amber-400 rounded-full"
-                style={{
-                  left: `${usedPercent}%`,
-                  width: `${occupiedPercent}%`,
-                }}
-              />
-            </div>
-            {room.reservedBytes > 0 && (
-              <p className="text-[10px] text-amber-500 mt-1">
-                上传中预占 {formatFileSize(room.reservedBytes)}
-              </p>
-            )}
+        {/* 移动端：剩余空间条 */}
+        <div className="sm:hidden mt-2">
+          <div className="flex items-center justify-between text-[10px] mb-1">
+            <span className="text-[var(--dr-text-muted)]">剩余空间</span>
+            <span className="font-medium" style={{ color: storageColor }}>
+              {formatFileSize(remainingSize)}
+            </span>
           </div>
-
-          <div className="text-right">
-            <div className="text-[10px] text-slate-400">存续倒计时</div>
-            <div
-              className={`text-sm font-mono font-bold ${
-                timeLeft < 300
-                  ? 'text-red-500'
-                  : timeLeft < 1800
-                    ? 'text-amber-500'
-                    : 'text-slate-700'
-              }`}
-            >
-              {formatDuration(timeLeft)}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              size="small"
-              icon={<LogoutOutlined />}
-              onClick={onExit}
-              className="rounded-lg text-xs"
-            >
-              退出
-            </Button>
-            {isOwner && (
-              <Button
-                danger
-                size="small"
-                onClick={onDissolve}
-                className="rounded-lg text-xs"
-              >
-                解散
-              </Button>
-            )}
-          </div>
+          <Progress
+            percent={remainingPercent}
+            showInfo={false}
+            size="small"
+            strokeColor={storageColor}
+            trailColor="var(--dr-border)"
+          />
         </div>
       </div>
     </div>

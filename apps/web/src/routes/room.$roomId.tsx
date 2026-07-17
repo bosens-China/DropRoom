@@ -5,19 +5,17 @@ import {
   useParams,
 } from '@tanstack/react-router';
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Drawer, Modal, message } from 'antd';
-import { LoadingOutlined, MenuOutlined, TeamOutlined } from '@ant-design/icons';
+import { Drawer, Modal, message } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 import { useRoomSync } from '../hooks/useRoomSync';
 import { useJoinedRooms } from '../hooks/useJoinedRooms';
 import { useRoomAccess } from '../hooks/useRoomAccess';
 import { useRoomUploads } from '../hooks/useRoomUploads';
 import {
-  getNextRoomIdAfterLeave,
   getRoomSession,
   removeJoinedRoom,
   touchJoinedRoom,
 } from '../utils/roomRegistry';
-import { RoomListPanel } from '../components/room/RoomListPanel';
 import { RoomMemberPanel } from '../components/room/RoomMemberPanel';
 import { RoomHeader } from '../components/room/RoomHeader';
 import { RoomTimeline } from '../components/room/RoomTimeline';
@@ -25,6 +23,7 @@ import { RoomComposer } from '../components/room/RoomComposer';
 import { JoinRoomModal } from '../components/room/JoinRoomModal';
 import { RoomEditModals } from '../components/room/RoomEditModals';
 import { RoomAccessError } from '../components/room/RoomAccessError';
+import { RoomResizableLayout } from '../components/room/RoomResizableLayout';
 import { createRoomConfirmations } from '../components/room/roomConfirmations';
 import { formatDuration } from '../utils/format';
 import { MAX_TEXT_LENGTH } from '../utils/roomLimits';
@@ -38,7 +37,7 @@ function RoomComponent() {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const [modalApi, modalContextHolder] = Modal.useModal();
-  const { rooms, refresh } = useJoinedRooms();
+  const { refresh } = useJoinedRooms();
   const {
     room,
     onlineMembers,
@@ -63,7 +62,6 @@ function RoomComponent() {
   const [isEditingNick, setIsEditingNick] = useState(false);
   const [nicknameInput, setNicknameInput] = useState('');
   const [timeLeft, setTimeLeft] = useState(24 * 60 * 60);
-  const [roomsDrawerOpen, setRoomsDrawerOpen] = useState(false);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -76,29 +74,28 @@ function RoomComponent() {
       if (me) setNicknameInput(me.nickname);
     }
   }, [room, onlineMembers, myId]);
+
   const navigateAfterLeave = useCallback(() => {
     refresh();
-    const nextId = getNextRoomIdAfterLeave(roomId);
-    if (nextId) {
-      navigate({ to: '/room/$roomId', params: { roomId: nextId } });
-    } else {
-      navigate({ to: '/' });
-    }
-  }, [roomId, navigate, refresh]);
-
-  const enterRoom = useCallback(
-    (nextRoom: { code: string }) => {
-      refresh();
-      setRoomsDrawerOpen(false);
-      navigate({ to: '/room/$roomId', params: { roomId: nextRoom.code } });
-    },
-    [navigate, refresh],
-  );
+    navigate({ to: '/' });
+  }, [navigate, refresh]);
 
   const roomAccess = useRoomAccess({
     notify: messageApi,
-    onCreated: enterRoom,
-    onJoined: enterRoom,
+    onCreated: (nextRoom) => {
+      refresh();
+      navigate({
+        to: '/room/$roomId',
+        params: { roomId: nextRoom.code },
+      });
+    },
+    onJoined: (nextRoom) => {
+      refresh();
+      navigate({
+        to: '/room/$roomId',
+        params: { roomId: nextRoom.code },
+      });
+    },
   });
 
   useEffect(() => {
@@ -168,8 +165,8 @@ function RoomComponent() {
   }
   if (!room) {
     return (
-      <div className="min-h-dvh w-full flex items-center justify-center bg-slate-50">
-        <LoadingOutlined className="text-blue-500 text-3xl" />
+      <div className="min-h-dvh w-full flex items-center justify-center dr-chat-bg">
+        <LoadingOutlined className="text-[#006EFF] text-3xl" />
       </div>
     );
   }
@@ -183,34 +180,28 @@ function RoomComponent() {
     if (await sendMessage(trimmed)) setInputText('');
   };
 
-  const handleCopyInvite = () => {
-    const inviteUrl = new URL(`/room/${roomId}`, window.location.origin);
+  const handleCopyInviteLink = () => {
+    const inviteUrl = new URL(
+      `/room/${roomId}`,
+      window.location.origin,
+    ).toString();
     void navigator.clipboard
-      .writeText(inviteUrl.toString())
-      .then(() => messageApi.success('邀请链接已复制，可粘贴到微信或 QQ'))
+      .writeText(inviteUrl)
+      .then(() => messageApi.success('邀请链接已复制'))
       .catch(() => messageApi.error('复制失败，请手动复制浏览器地址'));
   };
-
-  const listPanel = (
-    <RoomListPanel
-      rooms={rooms}
-      activeRoomId={roomId}
-      creating={roomAccess.creating}
-      onCreateRoom={roomAccess.openCreate}
-      onJoinRoom={roomAccess.openJoin}
-    />
-  );
 
   const memberPanel = (
     <RoomMemberPanel
       myId={myId}
       members={onlineMembers}
       onEditNickname={() => setIsEditingNick(true)}
+      onSaveNickname={changeNickname}
     />
   );
 
   return (
-    <div className="h-dvh w-full flex overflow-hidden bg-slate-100">
+    <div className="flex h-dvh w-full flex-col overflow-hidden dr-chat-bg">
       {contextHolder}
       {modalContextHolder}
 
@@ -227,7 +218,7 @@ function RoomComponent() {
         closable={false}
         centered
       >
-        <p className="text-sm text-slate-500 text-center mb-4">
+        <p className="text-sm text-[var(--dr-text-muted)] text-center mb-4">
           此房间已达 24 小时存续上限，系统将清除全部内容
         </p>
         <p className="text-3xl font-mono font-bold text-red-500 text-center">
@@ -235,46 +226,23 @@ function RoomComponent() {
         </p>
       </Modal>
 
-      <aside className="hidden md:block w-64 lg:w-72 shrink-0 h-full">
-        {listPanel}
-      </aside>
-
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <header className="md:hidden shrink-0 flex items-center justify-between px-3 py-2 bg-white border-b border-slate-200">
-          <Button
-            type="text"
-            icon={<MenuOutlined />}
-            onClick={() => setRoomsDrawerOpen(true)}
-            className="text-slate-600"
-          />
-          <span className="text-xs font-medium text-slate-600 truncate px-2">
-            {room.name}
-          </span>
-          <Button
-            type="text"
-            icon={<TeamOutlined />}
-            onClick={() => setMembersDrawerOpen(true)}
-            className="text-slate-600"
-          />
-        </header>
-
-        <main
-          className="flex-1 flex flex-col min-h-0 bg-slate-50"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
+      <RoomResizableLayout
+        sidebar={memberPanel}
+        header={
           <RoomHeader
             room={room}
             roomId={roomId}
             myId={myId}
             timeLeft={timeLeft}
-            onCopyInvite={handleCopyInvite}
+            memberCount={onlineMembers.length}
+            onCopyInviteLink={handleCopyInviteLink}
             onEditRoomName={() => setIsEditingName(true)}
             onDissolve={confirmations.dissolve}
             onExit={confirmations.exit}
+            onOpenMembers={() => setMembersDrawerOpen(true)}
           />
-
+        }
+        timeline={
           <RoomTimeline
             room={room}
             myId={myId}
@@ -289,7 +257,8 @@ function RoomComponent() {
             canRetryFile={canRetryUpload}
             isUploadingFile={isUploadingFile}
           />
-
+        }
+        composer={
           <RoomComposer
             inputText={inputText}
             isDragging={isDragging}
@@ -299,27 +268,16 @@ function RoomComponent() {
             onVideoSelect={selectVideo}
             onFileSelect={selectFile}
           />
-        </main>
-      </div>
+        }
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      />
 
-      <aside className="hidden xl:block w-60 shrink-0 h-full">
-        {memberPanel}
-      </aside>
-
-      <Drawer
-        title="我的房间"
-        placement="left"
-        open={roomsDrawerOpen}
-        onClose={() => setRoomsDrawerOpen(false)}
-        width={300}
-        styles={{ body: { padding: 0 } }}
-      >
-        {listPanel}
-      </Drawer>
-
+      {/* 移动端成员抽屉 */}
       <Drawer
         title="房间成员"
-        placement="right"
+        placement="left"
         open={membersDrawerOpen}
         onClose={() => setMembersDrawerOpen(false)}
         width={280}

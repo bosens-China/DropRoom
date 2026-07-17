@@ -41,7 +41,7 @@ export function RoomEditModals({
       >
         <label
           htmlFor="edit-room-name"
-          className="block text-sm font-medium text-slate-700 mb-2"
+          className="block text-sm font-medium text-[var(--dr-text)] mb-2"
         >
           房间名称
         </label>
@@ -68,7 +68,7 @@ export function RoomEditModals({
       >
         <label
           htmlFor="edit-nickname"
-          className="block text-sm font-medium text-slate-700 mb-2"
+          className="block text-sm font-medium text-[var(--dr-text)] mb-2"
         >
           昵称
         </label>
@@ -80,7 +80,7 @@ export function RoomEditModals({
           maxLength={15}
           showCount
         />
-        <p className="text-xs text-slate-400 mt-3">
+        <p className="text-xs text-[var(--dr-text-muted)] mt-3">
           昵称仅用于房间内展示，可随时修改。
         </p>
       </Modal>

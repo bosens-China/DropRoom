@@ -30,9 +30,9 @@ export function DropRoomLogo({
       />
       {showText && (
         <span
-          className={`${s.text} font-extrabold tracking-tight text-slate-800`}
+          className={`${s.text} font-extrabold tracking-tight text-[var(--dr-text)]`}
         >
-          Drop<span className="text-blue-500">Room</span>
+          Drop<span className="text-[#006EFF]">Room</span>
         </span>
       )}
     </div>

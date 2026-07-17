@@ -1,10 +1,9 @@
-import { Button, Input, Tooltip } from 'antd';
+import { Button, Grid, Input, Tooltip } from 'antd';
 import {
   FileOutlined,
   PictureOutlined,
   PlaySquareOutlined,
   SendOutlined,
-  UploadOutlined,
 } from '@ant-design/icons';
 import { MAX_TEXT_LENGTH } from '../../utils/roomLimits';
 
@@ -18,7 +17,7 @@ interface RoomComposerProps {
   onFileSelect: () => void;
 }
 
-/** 房间底部输入区：文字 + 文件上传 */
+/** 底部发送区：一体化输入卡片 */
 export function RoomComposer({
   inputText,
   isDragging,
@@ -29,45 +28,48 @@ export function RoomComposer({
   onFileSelect,
 }: RoomComposerProps) {
   const canSend = inputText.trim().length > 0;
+  const screens = Grid.useBreakpoint();
+  const isDesktop = Boolean(screens.md);
 
   return (
-    <div className="shrink-0 px-4 sm:px-6 lg:px-8 pb-4 pt-2 bg-slate-50/80 border-t border-slate-100">
+    <div className="room-composer w-full flex flex-col px-3 sm:px-4 py-3 dr-chat-bg dr-safe-bottom max-md:shrink-0 md:h-full md:min-h-0">
       {isDragging && (
-        <div className="mb-2 py-3 px-4 rounded-xl bg-blue-50 border border-dashed border-blue-300 flex items-center justify-center gap-2 text-blue-600 text-sm">
-          <UploadOutlined />
-          <span>释放文件开始上传</span>
+        <div className="mb-2 shrink-0 rounded-lg border border-dashed border-[var(--dr-primary-border)] bg-[var(--dr-primary-soft)] py-2 text-center text-sm text-[var(--dr-primary)]">
+          释放文件开始上传
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <Input.TextArea
-          value={inputText}
-          onChange={(e) => onInputChange(e.target.value)}
-          onPressEnter={(e) => {
-            if (
-              e.key === 'Enter' &&
-              !e.shiftKey &&
-              !e.nativeEvent.isComposing
-            ) {
-              e.preventDefault();
-              onSend();
-            }
-          }}
-          placeholder="输入要共享的文字内容…"
-          autoSize={{ minRows: 2, maxRows: 5 }}
-          maxLength={MAX_TEXT_LENGTH}
-          showCount
-          className="border-none! shadow-none! resize-none px-4 pt-3 pb-1 text-sm"
-        />
+      <div className="room-composer-card dr-surface flex flex-col overflow-hidden rounded-xl border shadow-sm md:min-h-0 md:flex-1">
+        <div className="room-composer-input-wrap flex flex-col md:min-h-0 md:flex-1">
+          <Input.TextArea
+            value={inputText}
+            onChange={(e) => onInputChange(e.target.value)}
+            onPressEnter={(e) => {
+              if (
+                e.key === 'Enter' &&
+                !e.shiftKey &&
+                !e.nativeEvent.isComposing
+              ) {
+                e.preventDefault();
+                onSend();
+              }
+            }}
+            placeholder="输入文字，或拖放文件到此处…"
+            autoSize={isDesktop ? false : { minRows: 2, maxRows: 5 }}
+            rows={isDesktop ? 3 : undefined}
+            maxLength={MAX_TEXT_LENGTH}
+            className="room-composer-input dr-scrollbar"
+          />
+        </div>
 
-        <div className="flex items-center justify-between px-2 pb-2 pt-1">
-          <div className="flex items-center gap-0.5">
+        <div className="room-composer-toolbar flex shrink-0 items-center justify-between gap-2 border-t border-[var(--dr-border)] px-2 pb-2.5 pt-1">
+          <div className="flex shrink-0 items-center gap-0.5">
             <Tooltip title="上传图片">
               <Button
                 type="text"
                 icon={<PictureOutlined />}
                 onClick={onImageSelect}
-                className="text-slate-500 hover:text-blue-500"
+                className="room-composer-tool !h-9 !w-9"
               />
             </Tooltip>
             <Tooltip title="上传视频">
@@ -75,7 +77,7 @@ export function RoomComposer({
                 type="text"
                 icon={<PlaySquareOutlined />}
                 onClick={onVideoSelect}
-                className="text-slate-500 hover:text-blue-500"
+                className="room-composer-tool !h-9 !w-9"
               />
             </Tooltip>
             <Tooltip title="上传文件">
@@ -83,25 +85,27 @@ export function RoomComposer({
                 type="text"
                 icon={<FileOutlined />}
                 onClick={onFileSelect}
-                className="text-slate-500 hover:text-blue-500"
+                className="room-composer-tool !h-9 !w-9"
               />
             </Tooltip>
           </div>
 
-          <Button
-            type="primary"
-            shape="circle"
-            icon={<SendOutlined />}
-            onClick={onSend}
-            disabled={!canSend}
-            className="bg-blue-500 hover:bg-blue-600 border-none shadow-sm"
-          />
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <span className="hidden whitespace-nowrap text-[10px] text-[var(--dr-text-muted)] md:inline">
+              Enter 发送 · Shift+Enter 换行
+            </span>
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={onSend}
+              disabled={!canSend}
+              className="room-composer-send shrink-0 !px-4"
+            >
+              发送
+            </Button>
+          </div>
         </div>
       </div>
-
-      <p className="text-center text-[10px] text-slate-400 mt-2">
-        支持断点续传 · 单批 50 个文件 / 500 MB · 房间总容量 2 GB · Enter 发送
-      </p>
     </div>
   );
 }

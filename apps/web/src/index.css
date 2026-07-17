@@ -20,23 +20,235 @@ body {
 
 #root {
   min-height: 100dvh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* 滚动条细化，提升桌面端观感 */
+/* 语义化主题变量 */
+:root,
+[data-theme='light'] {
+  --dr-safe-top: env(safe-area-inset-top, 0px);
+  --dr-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --dr-safe-left: env(safe-area-inset-left, 0px);
+  --dr-safe-right: env(safe-area-inset-right, 0px);
+  --dr-primary: #006eff;
+  --dr-primary-hover: #0058d9;
+  --dr-primary-soft: #e8f3ff;
+  --dr-primary-border: rgba(0, 110, 255, 0.18);
+  --dr-bg-app: #ffffff;
+  --dr-bg-page: #f5f6f8;
+  --dr-bg-sidebar: #ffffff;
+  --dr-bg-chat: #f5f6f8;
+  --dr-bg-surface: #ffffff;
+  --dr-border: rgba(15, 23, 42, 0.08);
+  --dr-text: #1e293b;
+  --dr-text-muted: #94a3b8;
+  --dr-card-me: #e8f3ff;
+  --dr-card-other: #ffffff;
+  --dr-scrollbar-thumb: rgba(100, 116, 139, 0.45);
+  --dr-scrollbar-thumb-hover: rgba(100, 116, 139, 0.65);
+  --dr-scrollbar-track: transparent;
+}
+
+[data-theme='dark'] {
+  --dr-safe-top: env(safe-area-inset-top, 0px);
+  --dr-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --dr-safe-left: env(safe-area-inset-left, 0px);
+  --dr-safe-right: env(safe-area-inset-right, 0px);
+  --dr-primary: #3d8eff;
+  --dr-primary-hover: #006eff;
+  --dr-primary-soft: rgba(0, 110, 255, 0.18);
+  --dr-primary-border: rgba(61, 142, 255, 0.35);
+  --dr-bg-app: #141414;
+  --dr-bg-page: #0d0d0d;
+  --dr-bg-sidebar: #1a1a1a;
+  --dr-bg-chat: #111111;
+  --dr-bg-surface: #1f1f1f;
+  --dr-border: rgba(255, 255, 255, 0.08);
+  --dr-text: #e2e8f0;
+  --dr-text-muted: #64748b;
+  --dr-card-me: rgba(0, 110, 255, 0.15);
+  --dr-card-other: #1f1f1f;
+  --dr-scrollbar-thumb: rgba(148, 163, 184, 0.35);
+  --dr-scrollbar-thumb-hover: rgba(148, 163, 184, 0.55);
+  --dr-scrollbar-track: transparent;
+}
+
+.dr-app {
+  background: var(--dr-bg-app);
+  color: var(--dr-text);
+  padding-left: var(--dr-safe-left);
+  padding-right: var(--dr-safe-right);
+}
+
+.dr-sidebar {
+  background: var(--dr-bg-sidebar);
+  border-color: var(--dr-border);
+}
+
+.dr-chat-bg {
+  background: var(--dr-bg-chat);
+}
+
+.dr-surface {
+  background: var(--dr-bg-surface);
+  border-color: var(--dr-border);
+}
+
+.dr-page-bg {
+  background: var(--dr-bg-page);
+}
+
+/* iOS 安全区：刘海、Home 指示条 */
+.dr-safe-top {
+  padding-top: var(--dr-safe-top);
+}
+
+.dr-safe-bottom {
+  padding-bottom: max(0.5rem, var(--dr-safe-bottom));
+}
+
+.dr-safe-inline {
+  padding-left: max(0px, var(--dr-safe-left));
+  padding-right: max(0px, var(--dr-safe-right));
+}
+
+.dr-card-me {
+  background: var(--dr-card-me);
+  border-color: var(--dr-primary-border);
+}
+
+.dr-card-other {
+  background: var(--dr-card-other);
+  border-color: var(--dr-border);
+}
+
+/* UnoCSS reset 会冲掉 Ant Design 主按钮默认态，此处恢复 */
+.ant-btn-primary:not(:disabled):not(.ant-btn-dangerous) {
+  background-color: var(--dr-primary);
+  color: #fff;
+  border-color: var(--dr-primary);
+}
+
+.ant-btn-primary:not(:disabled):not(.ant-btn-dangerous):hover {
+  background-color: var(--dr-primary-hover);
+  border-color: var(--dr-primary-hover);
+  color: #fff;
+}
+
+.ant-btn-primary:disabled {
+  background-color: var(--dr-primary-soft);
+  border-color: transparent;
+  color: var(--dr-text-muted);
+  opacity: 1;
+}
+
+/* 房间底部输入区 */
+.room-composer-input.ant-input {
+  resize: none;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  color: var(--dr-text);
+  padding: 0.75rem 1rem 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 @media (min-width: 768px) {
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  .room-composer-input-wrap textarea.room-composer-input {
+    height: 100% !important;
+    min-height: 3.5rem;
+    overflow-y: auto;
+  }
+}
+
+.room-composer-input.ant-input::placeholder {
+  color: var(--dr-text-muted);
+}
+
+.room-composer-input.ant-input:focus {
+  box-shadow: none;
+}
+
+.room-composer-tool.ant-btn {
+  color: var(--dr-text-muted);
+}
+
+.room-composer-tool.ant-btn:not(:disabled):hover {
+  color: var(--dr-primary);
+  background: var(--dr-primary-soft);
+}
+
+/* Splitter 拖拽条与主题对齐 */
+.room-layout {
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+.room-splitter.ant-splitter {
+  min-height: 0;
+}
+
+.room-splitter .ant-splitter-panel {
+  overflow: hidden;
+}
+
+.room-splitter .ant-splitter-bar {
+  background: transparent;
+}
+
+.room-splitter .ant-splitter-bar-dragger::before {
+  background: var(--dr-border) !important;
+}
+
+.room-splitter .ant-splitter-bar-dragger:hover::before {
+  background: var(--dr-primary) !important;
+}
+
+/*
+ * 局部滚动条：聊天区、侧栏成员列表、输入框等
+ * Firefox: scrollbar-width / scrollbar-color
+ * Chromium/Edge (Windows): ::-webkit-scrollbar
+ */
+.dr-scrollbar {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dr-scrollbar-thumb) var(--dr-scrollbar-track);
+}
+
+@media (min-width: 768px) {
+  .dr-scrollbar {
+    scrollbar-gutter: stable;
   }
 
-  ::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.45);
+  .dr-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .dr-scrollbar::-webkit-scrollbar-track {
+    background: var(--dr-scrollbar-track);
+    margin-block: 4px;
+  }
+
+  .dr-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--dr-scrollbar-thumb);
     border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 
-  ::-webkit-scrollbar-track {
+  .dr-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--dr-scrollbar-thumb-hover);
+  }
+
+  .dr-scrollbar::-webkit-scrollbar-thumb:active {
+    background-color: var(--dr-primary);
+  }
+
+  .dr-scrollbar::-webkit-scrollbar-corner {
     background: transparent;
   }
 }

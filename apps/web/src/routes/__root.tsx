@@ -1,28 +1,42 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
+import { DR_PRIMARY } from '../constants/theme';
+import { AppThemeProvider } from '../context/AppThemeContext';
+import { useAppTheme } from '../hooks/useAppTheme';
 
-// 根路由：Ant Design 主题 + 全宽页面容器
 export const Route = createRootRoute({
   component: RootComponent,
 });
 
-function RootComponent() {
+function ThemedApp() {
+  const { resolved } = useAppTheme();
+
   return (
     <ConfigProvider
       locale={zhCN}
       theme={{
+        algorithm:
+          resolved === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#3b82f6',
-          borderRadius: 10,
+          colorPrimary: DR_PRIMARY,
+          borderRadius: 8,
           fontFamily:
-            "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+            "system-ui, -apple-system, 'PingFang SC', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
         },
       }}
     >
-      <div className="min-h-dvh w-full text-slate-800 antialiased">
+      <div className="min-h-dvh w-full dr-app text-[var(--dr-text)] antialiased flex flex-col">
         <Outlet />
       </div>
     </ConfigProvider>
+  );
+}
+
+function RootComponent() {
+  return (
+    <AppThemeProvider>
+      <ThemedApp />
+    </AppThemeProvider>
   );
 }

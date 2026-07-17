@@ -1,4 +1,5 @@
 import { Button, Tooltip } from 'antd';
+import { useNavigate } from '@tanstack/react-router';
 import type { MemberView } from '@droproom/api/domain';
 import {
   CrownOutlined,
@@ -6,18 +7,25 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import { DropRoomLogo } from '../brand/DropRoomLogo';
+import { AppSettingsBar } from '../layout/AppSettingsBar';
+
 interface RoomMemberPanelProps {
   myId: string;
   members: MemberView[];
   onEditNickname: () => void;
+  onSaveNickname: (nickname: string) => Promise<boolean>;
 }
 
-/** 右侧成员面板 */
+/** QQ 风格左侧栏：品牌 + 成员 + 设置 */
 export function RoomMemberPanel({
   myId,
   members,
   onEditNickname,
+  onSaveNickname,
 }: RoomMemberPanelProps) {
+  const navigate = useNavigate();
+  const me = members.find((member) => member.id === myId);
   const sorted = [...members].sort((a, b) => {
     if (a.isOwner) return -1;
     if (b.isOwner) return 1;
@@ -27,18 +35,32 @@ export function RoomMemberPanel({
   });
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-slate-200/80">
-      <div className="px-4 py-4 border-b border-slate-100 shrink-0">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-          <TeamOutlined className="text-slate-400" />
-          <span>房间成员</span>
-        </div>
-        <p className="text-[11px] text-slate-400 mt-1">
-          当前 {members.length} 人在线
-        </p>
+    <div className="flex flex-col h-full w-full dr-sidebar border-r">
+      {/* 品牌 Logo */}
+      <div className="shrink-0 px-4 py-3.5 border-b">
+        <button
+          type="button"
+          onClick={() => navigate({ to: '/' })}
+          aria-label="返回首页"
+          className="border-none bg-transparent p-0 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <DropRoomLogo size="sm" />
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+      {/* 成员标题 */}
+      <div className="px-4 py-2.5 border-b shrink-0">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <TeamOutlined className="text-[#006EFF]" />
+          <span>成员</span>
+          <span className="text-xs font-normal text-[var(--dr-text-muted)]">
+            {members.length} 人在线
+          </span>
+        </div>
+      </div>
+
+      {/* 成员列表：独立滚动，Logo / 标题 / 设置固定 */}
+      <div className="room-member-scroll dr-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-1">
         {sorted.map((member) => {
           const isMe = member.id === myId;
           const isOwner = member.isOwner;
@@ -46,34 +68,32 @@ export function RoomMemberPanel({
           return (
             <div
               key={member.id}
-              className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors"
             >
               <div className="relative shrink-0">
-                <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                  <UserOutlined />
+                <div
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-semibold ${
+                    isMe ? 'bg-[#006EFF]' : 'bg-slate-400 dark:bg-slate-600'
+                  }`}
+                >
+                  {member.nickname.slice(0, 1).toUpperCase()}
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-emerald-500" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-[var(--dr-bg-sidebar)] bg-emerald-500" />
               </div>
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
-                  <span className="text-sm text-slate-700 truncate font-medium">
+                  <span className="text-sm truncate font-medium">
                     {member.nickname}
                   </span>
-                  {isMe && (
-                    <span className="text-[9px] bg-blue-100 text-blue-600 px-1 rounded shrink-0">
-                      我
-                    </span>
-                  )}
                   {isOwner && (
                     <Tooltip title="房主">
                       <CrownOutlined className="text-amber-500 text-[10px] shrink-0" />
                     </Tooltip>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-400">在线</span>
-                <span className="text-[10px] text-slate-300 ml-1">
-                  #{member.numberId}
+                <span className="text-[11px] text-[var(--dr-text-muted)]">
+                  {isMe ? '我' : '在线'} · #{member.numberId}
                 </span>
               </div>
 
@@ -83,12 +103,29 @@ export function RoomMemberPanel({
                   size="small"
                   icon={<EditOutlined />}
                   onClick={onEditNickname}
-                  className="text-slate-400 shrink-0"
+                  className="text-[var(--dr-text-muted)] shrink-0"
                 />
               )}
             </div>
           );
         })}
+
+        {members.length === 0 && (
+          <div className="px-4 py-8 text-center">
+            <UserOutlined className="text-2xl text-[var(--dr-text-muted)]" />
+            <p className="text-xs text-[var(--dr-text-muted)] mt-2">
+              暂无在线成员
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="shrink-0">
+        <AppSettingsBar
+          variant="embedded"
+          nickname={me?.nickname}
+          onNicknameSave={onSaveNickname}
+        />
       </div>
     </div>
   );

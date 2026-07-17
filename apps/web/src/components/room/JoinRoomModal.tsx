@@ -48,7 +48,7 @@ export function JoinRoomModal({
     >
       <label
         htmlFor="join-room-code"
-        className="block text-sm font-medium text-slate-700 mb-2"
+        className="block text-sm font-medium text-[var(--dr-text)] mb-2"
       >
         8 位房间码
       </label>
@@ -61,12 +61,12 @@ export function JoinRoomModal({
           if (canJoin && !loading) onJoin(cleanCode);
         }}
         disabled={lockoutTime > 0}
-        className="text-center font-mono text-lg h-11"
+        className="text-center font-mono text-lg h-12 tracking-widest"
         size="large"
         autoFocus
       />
-      <p className="text-xs text-slate-400 mt-3">
-        加入后房间会保留在你的列表中，可随时切换。
+      <p className="text-xs text-[var(--dr-text-muted)] mt-3">
+        输入房间码加入；收到邀请链接时，打开链接并确认加入即可。
       </p>
     </Modal>
   );
