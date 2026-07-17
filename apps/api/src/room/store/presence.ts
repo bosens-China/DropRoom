@@ -105,6 +105,9 @@ export abstract class RoomStorePresence extends RoomStoreCore {
       usedBytes: room.usedBytes,
       reservedBytes: room.reservedBytes,
       maxFileBytes: this.config.maxRoomFileBytes,
+      maxTextLength: this.config.maxTextLength,
+      maxFilesPerBatch: this.config.maxFilesPerBatch,
+      maxBatchBytes: this.config.maxBatchBytes,
       items: room.items.map((item) =>
         item.type === 'file'
           ? this.fileView(this.requireFile(room, item.id))

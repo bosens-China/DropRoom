@@ -166,6 +166,28 @@ const environmentSchema = z
         message: 'Swagger UI 路径不能与 OpenAPI JSON 路径相同',
       });
     }
+
+    if (
+      environment.DROPROOM_MAX_BATCH_BYTES >
+      environment.DROPROOM_MAX_ROOM_FILE_BYTES
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['DROPROOM_MAX_BATCH_BYTES'],
+        message: '单批文件上限不能大于单房间文件上限',
+      });
+    }
+
+    if (
+      environment.DROPROOM_MAX_ROOM_FILE_BYTES >
+      environment.DROPROOM_GLOBAL_FILE_BYTES
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['DROPROOM_MAX_ROOM_FILE_BYTES'],
+        message: '单房间文件上限不能大于全局文件上限',
+      });
+    }
   });
 
 export type ApiConfig = {

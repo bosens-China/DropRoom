@@ -6,10 +6,7 @@ import {
   type RefObject,
 } from 'react';
 import type { RoomSnapshot } from '@droproom/api/domain';
-import {
-  MAX_BATCH_FILE_COUNT,
-  MAX_BATCH_SIZE_BYTES,
-} from '../utils/roomLimits';
+import { formatFileSize } from '../utils/format';
 
 interface UploadNotifier {
   error: (content: string) => void;
@@ -34,14 +31,16 @@ export function useRoomUploads({
 
   const submitFiles = (files: File[]) => {
     if (!room || !files.length) return;
-    if (files.length > MAX_BATCH_FILE_COUNT) {
-      notify.error(`单次最多选择 ${MAX_BATCH_FILE_COUNT} 个文件`);
+    if (files.length > room.maxFilesPerBatch) {
+      notify.error(`单次最多选择 ${room.maxFilesPerBatch} 个文件`);
       return;
     }
 
     const batchSize = files.reduce((total, file) => total + file.size, 0);
-    if (batchSize > MAX_BATCH_SIZE_BYTES) {
-      notify.error('单批文件总大小不能超过 500 MB');
+    if (batchSize > room.maxBatchBytes) {
+      notify.error(
+        `单批文件总大小不能超过 ${formatFileSize(room.maxBatchBytes)}`,
+      );
       return;
     }
 

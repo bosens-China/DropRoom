@@ -26,7 +26,6 @@ import { RoomAccessError } from '../components/room/RoomAccessError';
 import { RoomResizableLayout } from '../components/room/RoomResizableLayout';
 import { createRoomConfirmations } from '../components/room/roomConfirmations';
 import { formatDuration } from '../utils/format';
-import { MAX_TEXT_LENGTH } from '../utils/roomLimits';
 
 export const Route = createFileRoute('/room/$roomId')({
   component: RoomComponent,
@@ -173,8 +172,8 @@ function RoomComponent() {
   const handleSendText = async () => {
     const trimmed = inputText.trim();
     if (!trimmed) return;
-    if (trimmed.length > MAX_TEXT_LENGTH) {
-      messageApi.error(`文字最多 ${MAX_TEXT_LENGTH.toLocaleString()} 字`);
+    if (trimmed.length > room.maxTextLength) {
+      messageApi.error(`文字最多 ${room.maxTextLength.toLocaleString()} 字`);
       return;
     }
     if (await sendMessage(trimmed)) setInputText('');
@@ -261,6 +260,7 @@ function RoomComponent() {
         composer={
           <RoomComposer
             inputText={inputText}
+            maxTextLength={room.maxTextLength}
             isDragging={isDragging}
             onInputChange={setInputText}
             onSend={handleSendText}

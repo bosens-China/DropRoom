@@ -59,6 +59,9 @@ function makeRoom(): RoomSnapshot {
     usedBytes: 0,
     reservedBytes: 0,
     maxFileBytes: 2_000_000_000,
+    maxTextLength: 20_000,
+    maxFilesPerBatch: 50,
+    maxBatchBytes: 500_000_000,
     items: [],
   };
 }

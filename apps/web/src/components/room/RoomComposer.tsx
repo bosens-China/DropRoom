@@ -5,10 +5,10 @@ import {
   PlaySquareOutlined,
   SendOutlined,
 } from '@ant-design/icons';
-import { MAX_TEXT_LENGTH } from '../../utils/roomLimits';
 
 interface RoomComposerProps {
   inputText: string;
+  maxTextLength: number;
   isDragging: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
@@ -20,6 +20,7 @@ interface RoomComposerProps {
 /** 底部发送区：一体化输入卡片 */
 export function RoomComposer({
   inputText,
+  maxTextLength,
   isDragging,
   onInputChange,
   onSend,
@@ -57,7 +58,7 @@ export function RoomComposer({
             placeholder="输入文字，或拖放文件到此处…"
             autoSize={isDesktop ? false : { minRows: 2, maxRows: 5 }}
             rows={isDesktop ? 3 : undefined}
-            maxLength={MAX_TEXT_LENGTH}
+            maxLength={maxTextLength}
             className="room-composer-input dr-scrollbar"
           />
         </div>

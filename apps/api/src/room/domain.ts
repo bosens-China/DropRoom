@@ -135,6 +135,9 @@ export const roomSnapshotSchema = z
     usedBytes: z.number().int().nonnegative(),
     reservedBytes: z.number().int().nonnegative(),
     maxFileBytes: z.number().int().positive(),
+    maxTextLength: z.number().int().positive(),
+    maxFilesPerBatch: z.number().int().positive(),
+    maxBatchBytes: z.number().int().positive(),
     items: z.array(roomItemSchema),
   })
   .openapi('RoomSnapshot');

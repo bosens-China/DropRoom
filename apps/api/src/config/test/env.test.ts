@@ -11,6 +11,9 @@ describe('API 环境配置', () => {
     expect(config.corsOrigins).toEqual(DEFAULT_API_CONFIG.corsOrigins);
     expect(config.openApiEnabled).toBe(true);
     expect(config.swaggerPath).toBe('/docs');
+    expect(config.maxFilesPerBatch).toBe(50);
+    expect(config.maxBatchBytes).toBe(500_000_000);
+    expect(config.maxRoomFileBytes).toBe(2_000_000_000);
   });
 
   it('生产环境要求填写前端来源和 Redis 地址', () => {
@@ -57,5 +60,36 @@ describe('API 环境配置', () => {
     expect(
       loadApiConfig({ DROPROOM_OPENAPI_ENABLED: 'false' }).openApiEnabled,
     ).toBe(false);
+  });
+
+  it('允许覆盖上传与房间容量限制', () => {
+    const config = loadApiConfig({
+      DROPROOM_MAX_TEXT_LENGTH: '10000',
+      DROPROOM_MAX_FILES_PER_BATCH: '20',
+      DROPROOM_MAX_BATCH_BYTES: '100000000',
+      DROPROOM_MAX_ROOM_FILE_BYTES: '500000000',
+      DROPROOM_GLOBAL_FILE_BYTES: '5000000000',
+    });
+
+    expect(config.maxTextLength).toBe(10_000);
+    expect(config.maxFilesPerBatch).toBe(20);
+    expect(config.maxBatchBytes).toBe(100_000_000);
+    expect(config.maxRoomFileBytes).toBe(500_000_000);
+    expect(config.maxGlobalFileBytes).toBe(5_000_000_000);
+  });
+
+  it('拒绝不一致的容量层级', () => {
+    expect(() =>
+      loadApiConfig({
+        DROPROOM_MAX_BATCH_BYTES: '2000',
+        DROPROOM_MAX_ROOM_FILE_BYTES: '1000',
+      }),
+    ).toThrow();
+    expect(() =>
+      loadApiConfig({
+        DROPROOM_MAX_ROOM_FILE_BYTES: '2000',
+        DROPROOM_GLOBAL_FILE_BYTES: '1000',
+      }),
+    ).toThrow();
   });
 });

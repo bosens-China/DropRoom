@@ -36,6 +36,9 @@ function makeCredentials(code = '12345678'): RoomCredentials {
     usedBytes: 0,
     reservedBytes: 0,
     maxFileBytes: 2_000_000_000,
+    maxTextLength: 20_000,
+    maxFilesPerBatch: 50,
+    maxBatchBytes: 500_000_000,
     items: [],
   };
   return { memberToken: 'x'.repeat(32), room };
