@@ -2,8 +2,10 @@ import type { AppType } from '@droproom/api/app';
 import type { ErrorResponse } from '@droproom/api/domain';
 import { hc } from 'hono/client';
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:43117';
+export const API_BASE_URL = new URL(
+  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:43117',
+  window.location.origin,
+).toString();
 
 export const apiClient = hc<AppType>(API_BASE_URL);
 
