@@ -34,9 +34,11 @@ function HomeComponent() {
     <div className="min-h-dvh w-full flex flex-col overflow-x-hidden dr-page-bg dr-safe-top">
       {contextHolder}
 
-      <header className="shrink-0 flex items-center justify-between px-5 sm:px-8 h-14 border-b dr-surface dr-safe-inline">
-        <DropRoomLogo size="sm" />
-        <AppSettingsBar variant="header" />
+      <header className="shrink-0 h-14 border-b dr-surface dr-safe-inline">
+        <div className="h-full flex items-center justify-between px-5 sm:px-8">
+          <DropRoomLogo size="sm" />
+          <AppSettingsBar variant="header" />
+        </div>
       </header>
 
       {/* 主操作区 */}
