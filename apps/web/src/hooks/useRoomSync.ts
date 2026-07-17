@@ -4,7 +4,7 @@ import type {
   RoomItem,
   RoomSnapshot,
 } from '@droproom/api/domain';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import {
   ApiRequestError,
   apiClient,
@@ -16,6 +16,7 @@ import {
 import {
   getRoomSession,
   removeJoinedRoom,
+  subscribeJoinedRooms,
   updateRoomSnapshot,
 } from '../utils/roomRegistry';
 import { useRoomActions } from './useRoomActions';
@@ -78,7 +79,10 @@ function applyRoomEvent(
 
 export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
   const session = getRoomSession(roomId);
-  const sessionKey = session?.joinedAt ?? 0;
+  const sessionKey = useSyncExternalStore(
+    subscribeJoinedRooms,
+    () => getRoomSession(roomId)?.joinedAt ?? 0,
+  );
   const [room, setRoom] = useState<RoomSnapshot | null>(session?.room ?? null);
   const [error, setError] = useState<string | null>(
     session ? null : '缺少当前房间的成员凭证，请重新加入',

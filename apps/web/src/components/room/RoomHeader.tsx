@@ -4,9 +4,9 @@ import {
   CopyOutlined,
   EditOutlined,
   LogoutOutlined,
+  MenuUnfoldOutlined,
   MoreOutlined,
   StopOutlined,
-  TeamOutlined,
 } from '@ant-design/icons';
 import type { RoomSnapshot } from '@droproom/api/domain';
 import { DR_PRIMARY } from '../../constants/theme';
@@ -75,10 +75,11 @@ export function RoomHeader({
           {onOpenMembers && (
             <Button
               type="text"
-              icon={<TeamOutlined />}
+              icon={<MenuUnfoldOutlined />}
               onClick={onOpenMembers}
               className="md:hidden shrink-0 text-[var(--dr-text-muted)] !w-9 !h-9"
-              aria-label="打开成员列表"
+              aria-label="展开成员栏"
+              title="展开成员栏"
             />
           )}
 

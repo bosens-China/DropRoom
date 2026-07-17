@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router';
 import { useState, useEffect, useCallback } from 'react';
 import { Drawer, Modal, message } from 'antd';
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined, MenuFoldOutlined } from '@ant-design/icons';
 import { useRoomSync } from '../hooks/useRoomSync';
 import { useJoinedRooms } from '../hooks/useJoinedRooms';
 import { useRoomAccess } from '../hooks/useRoomAccess';
@@ -282,7 +282,8 @@ function RoomComponent() {
         placement="left"
         open={membersDrawerOpen}
         onClose={() => setMembersDrawerOpen(false)}
-        width={280}
+        closable={{ closeIcon: <MenuFoldOutlined />, placement: 'start' }}
+        size={280}
         styles={{ body: { padding: 0 } }}
       >
         {memberPanel}

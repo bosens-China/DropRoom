@@ -79,7 +79,7 @@ export function SettingsModal({
             分钟无人在线后自动销毁，不保留历史记录。
           </p>
           <p className="text-xs text-[var(--dr-text-muted)] leading-relaxed">
-            昵称、主题与房间布局尺寸均保存在本机浏览器，不会上传到服务器。
+            昵称会在加入房间时发送给服务器并展示给房间成员；主题与房间布局仅保存在本机浏览器。
           </p>
         </div>
       </div>

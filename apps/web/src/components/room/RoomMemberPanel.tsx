@@ -37,7 +37,7 @@ export function RoomMemberPanel({
   return (
     <div className="flex flex-col h-full w-full dr-sidebar border-r">
       {/* 品牌 Logo */}
-      <div className="shrink-0 px-4 py-3.5 border-b">
+      <div className="shrink-0 px-4 py-3.5 border-b border-[var(--dr-border)]">
         <button
           type="button"
           onClick={() => navigate({ to: '/' })}
@@ -49,7 +49,7 @@ export function RoomMemberPanel({
       </div>
 
       {/* 成员标题 */}
-      <div className="px-4 py-2.5 border-b shrink-0">
+      <div className="px-4 py-2.5 border-b border-[var(--dr-border)] shrink-0">
         <div className="flex items-center gap-2 text-sm font-medium">
           <TeamOutlined className="text-[#006EFF]" />
           <span>成员</span>
