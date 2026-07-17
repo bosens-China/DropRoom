@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "latest-react",
+  "owner": "jovermier",
+  "repo": "claude-code-plugins-ip-labs",
+  "path": "plugins/react/skills/latest-react",
+  "branch": "main",
+  "sha": "289c196d4cbf910aa2f0c45e95eb67abbbebfe5d",
+  "source": "manual"
+}
