@@ -9,7 +9,14 @@ const requests = vi.hoisted(() => ({
 }));
 
 vi.mock('../../api/client', () => ({
-  ApiRequestError: class ApiRequestError extends Error {},
+  ApiRequestError: class ApiRequestError extends Error {
+    readonly status: number;
+
+    constructor(status: number, response: { error: { message: string } }) {
+      super(response.error.message);
+      this.status = status;
+    }
+  },
   apiClient: {
     rooms: {
       ':code': { $get: requests.getRoom },
@@ -26,6 +33,7 @@ vi.mock('../useRoomActions', () => ({
   useRoomActions: () => ({}),
 }));
 
+import { ApiRequestError } from '../../api/client';
 import { useRoomSync } from '../useRoomSync';
 
 const ROOM_ID = '12345678';
@@ -65,8 +73,10 @@ let container: HTMLDivElement;
 const notify = { error: vi.fn() };
 
 function Harness() {
-  const { room, error } = useRoomSync(ROOM_ID, notify);
-  return <div>{error ?? room?.name ?? '加载中'}</div>;
+  const { room, error, canJoin } = useRoomSync(ROOM_ID, notify);
+  return (
+    <div data-can-join={String(canJoin)}>{error ?? room?.name ?? '加载中'}</div>
+  );
 }
 
 describe('useRoomSync', () => {
@@ -94,6 +104,9 @@ describe('useRoomSync', () => {
       root.render(<Harness />);
     });
     expect(container.textContent).toBe(MISSING_SESSION_MESSAGE);
+    expect(container.firstElementChild?.getAttribute('data-can-join')).toBe(
+      'true',
+    );
 
     await act(async () => {
       saveRoomCredentials({ memberToken: 'a'.repeat(32), room });
@@ -101,5 +114,27 @@ describe('useRoomSync', () => {
 
     expect(container.textContent).toBe('邀请房间');
     expect(requests.getRoom).toHaveBeenCalledOnce();
+  });
+
+  it('房间已销毁时不再提供重新加入入口', async () => {
+    const room = makeRoom();
+    saveRoomCredentials({ memberToken: 'a'.repeat(32), room });
+    requests.getRoom.mockRejectedValue(
+      new ApiRequestError(404, {
+        error: {
+          code: 'ROOM_NOT_FOUND',
+          message: '房间不存在或已销毁',
+        },
+      }),
+    );
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    expect(container.textContent).toBe('房间不存在或已销毁');
+    expect(container.firstElementChild?.getAttribute('data-can-join')).toBe(
+      'false',
+    );
   });
 });

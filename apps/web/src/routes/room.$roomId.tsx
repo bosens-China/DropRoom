@@ -11,11 +11,7 @@ import { useRoomSync } from '../hooks/useRoomSync';
 import { useJoinedRooms } from '../hooks/useJoinedRooms';
 import { useRoomAccess } from '../hooks/useRoomAccess';
 import { useRoomUploads } from '../hooks/useRoomUploads';
-import {
-  getRoomSession,
-  removeJoinedRoom,
-  touchJoinedRoom,
-} from '../utils/roomRegistry';
+import { removeJoinedRoom, touchJoinedRoom } from '../utils/roomRegistry';
 import { RoomMemberPanel } from '../components/room/RoomMemberPanel';
 import { RoomHeader } from '../components/room/RoomHeader';
 import { RoomTimeline } from '../components/room/RoomTimeline';
@@ -41,6 +37,7 @@ function RoomComponent() {
     room,
     onlineMembers,
     error: syncError,
+    canJoin,
     myId,
     sendMessage,
     uploadFiles,
@@ -149,13 +146,12 @@ function RoomComponent() {
     deleteFile,
   });
   if (syncError) {
-    const missingSession = getRoomSession(roomId) === null;
     return (
       <>
         {contextHolder}
         <RoomAccessError
           message={syncError}
-          missingSession={missingSession}
+          canJoin={canJoin}
           joining={roomAccess.joining}
           onJoin={() => void roomAccess.join(roomId)}
           onBack={navigateAfterLeave}

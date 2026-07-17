@@ -49,7 +49,7 @@ describe('RoomAccessError', () => {
       root.render(
         <RoomAccessError
           message="缺少当前房间的成员凭证，请重新加入"
-          missingSession
+          canJoin
           joining={false}
           onJoin={onJoin}
           onBack={vi.fn()}
@@ -71,5 +71,29 @@ describe('RoomAccessError', () => {
     );
     await act(async () => joinButton?.click());
     expect(onJoin).toHaveBeenCalledOnce();
+  });
+
+  it('房间已销毁时只提供返回首页入口', async () => {
+    const onBack = vi.fn();
+    await act(async () => {
+      root.render(
+        <RoomAccessError
+          message="房间不存在或已销毁"
+          canJoin={false}
+          joining={false}
+          onJoin={vi.fn()}
+          onBack={onBack}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain('房间不存在或已销毁');
+    expect(container.textContent).not.toContain('加入这个房间');
+
+    const backButton = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent === '返回首页',
+    );
+    await act(async () => backButton?.click());
+    expect(onBack).toHaveBeenCalledOnce();
   });
 });

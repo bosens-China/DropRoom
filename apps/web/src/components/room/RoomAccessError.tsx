@@ -5,7 +5,7 @@ import { AppSettingsBar } from '../layout/AppSettingsBar';
 
 interface RoomAccessErrorProps {
   message: string;
-  missingSession: boolean;
+  canJoin: boolean;
   joining: boolean;
   onJoin: () => void;
   onBack: () => void;
@@ -14,7 +14,7 @@ interface RoomAccessErrorProps {
 /** 邀请链接加入入口与失效房间提示 */
 export function RoomAccessError({
   message,
-  missingSession,
+  canJoin,
   joining,
   onJoin,
   onBack,
@@ -32,24 +32,24 @@ export function RoomAccessError({
         <div className="w-full px-5">
           <div className="max-w-md w-full mx-auto dr-surface rounded-2xl border p-8 text-center shadow-sm">
             <h2
-              className={`text-lg font-bold mb-2 ${missingSession ? 'text-[var(--dr-text)]' : 'text-red-500'}`}
+              className={`text-lg font-bold mb-2 ${canJoin ? 'text-[var(--dr-text)]' : 'text-red-500'}`}
             >
-              {missingSession ? '加入房间' : '无法进入房间'}
+              {canJoin ? '加入房间' : '无法进入房间'}
             </h2>
             <p className="text-sm text-[var(--dr-text-muted)] mb-6">
-              {missingSession
+              {canJoin
                 ? '加入前可在右上角修改昵称，房间内其他成员会看到它。'
                 : message}
             </p>
             <Button
               type="primary"
               block
-              loading={missingSession && joining}
-              onClick={missingSession ? onJoin : onBack}
+              loading={canJoin && joining}
+              onClick={canJoin ? onJoin : onBack}
               className="rounded-lg"
-              icon={missingSession ? undefined : <HomeOutlined />}
+              icon={canJoin ? undefined : <HomeOutlined />}
             >
-              {missingSession ? '加入这个房间' : '返回首页'}
+              {canJoin ? '加入这个房间' : '返回首页'}
             </Button>
           </div>
         </div>

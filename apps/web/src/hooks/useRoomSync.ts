@@ -87,6 +87,9 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
   const [error, setError] = useState<string | null>(
     session ? null : '缺少当前房间的成员凭证，请重新加入',
   );
+  const [unavailableRoomId, setUnavailableRoomId] = useState<string | null>(
+    null,
+  );
 
   const commitRoom = (nextRoom: RoomSnapshot | null) => {
     setRoom(nextRoom);
@@ -97,12 +100,15 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
     const currentSession = getRoomSession(roomId);
     if (!currentSession) {
       setRoom(null);
-      setError('缺少当前房间的成员凭证，请重新加入');
+      if (unavailableRoomId !== roomId) {
+        setError('缺少当前房间的成员凭证，请重新加入');
+      }
       return;
     }
 
     setRoom(currentSession.room);
     setError(null);
+    setUnavailableRoomId(null);
     let active = true;
     let events: EventSource | undefined;
 
@@ -122,6 +128,7 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
           if (!payload) return;
 
           if (payload.type === 'room.destroyed') {
+            setUnavailableRoomId(roomId);
             removeJoinedRoom(roomId);
             setRoom(null);
             setError('房间已销毁');
@@ -157,6 +164,7 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
           requestError instanceof ApiRequestError &&
           (requestError.status === 401 || requestError.status === 404)
         ) {
+          setUnavailableRoomId(requestError.status === 404 ? roomId : null);
           removeJoinedRoom(roomId);
           setRoom(null);
         }
@@ -167,7 +175,7 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
       active = false;
       events?.close();
     };
-  }, [roomId, notify, sessionKey]);
+  }, [roomId, notify, sessionKey, unavailableRoomId]);
 
   const actions = useRoomActions({
     roomId,
@@ -180,6 +188,7 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
     room,
     onlineMembers: room?.members ?? [],
     error,
+    canJoin: getRoomSession(roomId) === null && unavailableRoomId !== roomId,
     myId: room?.currentMemberId ?? '',
     ...actions,
   };
