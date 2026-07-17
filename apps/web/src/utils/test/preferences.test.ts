@@ -1,11 +1,26 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  getMyNickname,
   getRoomLayoutPrefs,
   getThemeMode,
   resolveTheme,
   setRoomLayoutPrefs,
   setThemeMode,
 } from '../preferences';
+
+describe('preferences nickname', () => {
+  afterEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it('首次访问时从扩展词库生成并保存昵称', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.999);
+
+    expect(getMyNickname()).toBe('闪耀的坐标');
+    expect(localStorage.getItem('droproom-user-nickname')).toBe('闪耀的坐标');
+  });
+});
 
 describe('preferences theme', () => {
   afterEach(() => {

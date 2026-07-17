@@ -36,6 +36,18 @@ export function getMyNickname(): string {
     '深邃',
     '优雅',
     '无畏',
+    '好奇',
+    '可靠',
+    '专注',
+    '从容',
+    '机敏',
+    '友善',
+    '清醒',
+    '浪漫',
+    '坚定',
+    '自在',
+    '温柔',
+    '闪耀',
   ];
   const nouns = [
     '极客',
@@ -46,6 +58,18 @@ export function getMyNickname(): string {
     '代码',
     '网关',
     '星宿',
+    '向导',
+    '旅人',
+    '工匠',
+    '卫星',
+    '脉冲',
+    '像素',
+    '模块',
+    '终端',
+    '探针',
+    '密钥',
+    '引擎',
+    '坐标',
   ];
   const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
   const noun = nouns[Math.floor(Math.random() * nouns.length)];

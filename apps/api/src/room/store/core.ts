@@ -83,6 +83,16 @@ const ROOM_ADJECTIVES = [
   '绿色',
   '银色',
   '橙色',
+  '柔和',
+  '晴朗',
+  '悠然',
+  '灵动',
+  '闪耀',
+  '透明',
+  '宁静',
+  '遥远',
+  '清新',
+  '灿烂',
 ] as const;
 
 const ROOM_NOUNS = [
@@ -96,6 +106,16 @@ const ROOM_NOUNS = [
   '纸船',
   '月亮',
   '山谷',
+  '鲸鱼',
+  '岛屿',
+  '森林',
+  '萤火',
+  '银河',
+  '风铃',
+  '蒲公英',
+  '极光',
+  '珊瑚',
+  '雨滴',
 ] as const;
 
 export abstract class RoomStoreCore {
