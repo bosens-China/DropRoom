@@ -36,9 +36,10 @@ export DROPROOM_WEB_BIND=0.0.0.0
 - 上传发送超时不低于5分钟。
 - SSE 读取超时不低于24小时并关闭响应缓冲。
 - 保留 `X-Forwarded-For`、`X-Forwarded-Proto` 和请求 ID。
+- 最外层代理需要覆盖客户端自行提供的 `X-Forwarded-For`，避免伪造来源地址。
 - 允许 Web 携带每个房间独立的 HttpOnly Cookie。
 
-Web 容器内的 Nginx 已配置3 MB请求体、分片上传超时、SSE、同源 `/api` 代理和基础安全响应头。外层代理仍需采用相同或更宽松的请求限制。
+Web 容器内的 Nginx 已配置3 MB请求体、分片上传超时、SSE、同源 `/api` 代理和基础安全响应头。Nginx 会把外层代理提供的 `X-Forwarded-For` 继续追加到代理链，并保留外层的 HTTPS 协议。外层代理仍需采用相同或更宽松的请求限制。
 
 ## 静态资源缓存
 
