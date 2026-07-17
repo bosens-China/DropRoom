@@ -93,7 +93,7 @@ DROPROOM_IMAGE_TAG=1.2.3 pnpm docker:prod:up
 ## Docker 镜像
 
 GitHub Actions 会执行前后端 lint、类型检查、测试和构建，然后发布
-`linux/amd64` 与 `linux/arm64` 镜像：
+`linux/amd64` 镜像：
 
 ```text
 boses/droproom-api
