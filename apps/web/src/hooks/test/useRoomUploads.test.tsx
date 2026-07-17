@@ -1,6 +1,6 @@
 import type { RoomSnapshot } from '@droproom/api/domain';
 import { act, useEffect } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, ClipboardEvent } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRoomUploads } from '../useRoomUploads';
@@ -48,6 +48,16 @@ function selectFiles(files: File[]): void {
   uploads.handleFileChange(event);
 }
 
+function pasteFiles(files: File[]) {
+  if (!uploads) throw new Error('Hook 尚未渲染');
+  const preventDefault = vi.fn();
+  uploads.handlePaste({
+    clipboardData: { files: files as unknown as FileList },
+    preventDefault,
+  } as unknown as ClipboardEvent<HTMLTextAreaElement>);
+  return preventDefault;
+}
+
 describe('useRoomUploads', () => {
   beforeEach(() => {
     notify.error.mockReset();
@@ -71,5 +81,20 @@ describe('useRoomUploads', () => {
 
     selectFiles([new File(['1234'], 'ok.txt')]);
     expect(uploadFiles).toHaveBeenCalledOnce();
+  });
+
+  it('粘贴文件时复用上传流程并阻止写入输入框', () => {
+    const file = new File(['1234'], 'clipboard.png', { type: 'image/png' });
+    const preventDefault = pasteFiles([file]);
+
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(uploadFiles).toHaveBeenCalledWith([file]);
+  });
+
+  it('粘贴纯文字时保留浏览器默认行为', () => {
+    const preventDefault = pasteFiles([]);
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(uploadFiles).not.toHaveBeenCalled();
   });
 });

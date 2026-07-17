@@ -5,6 +5,7 @@ import {
   PlaySquareOutlined,
   SendOutlined,
 } from '@ant-design/icons';
+import type { ClipboardEventHandler } from 'react';
 
 interface RoomComposerProps {
   inputText: string;
@@ -15,6 +16,7 @@ interface RoomComposerProps {
   onImageSelect: () => void;
   onVideoSelect: () => void;
   onFileSelect: () => void;
+  onPasteFiles: ClipboardEventHandler<HTMLTextAreaElement>;
 }
 
 /** 底部发送区：一体化输入卡片 */
@@ -27,6 +29,7 @@ export function RoomComposer({
   onImageSelect,
   onVideoSelect,
   onFileSelect,
+  onPasteFiles,
 }: RoomComposerProps) {
   const canSend = inputText.trim().length > 0;
   const screens = Grid.useBreakpoint();
@@ -45,6 +48,7 @@ export function RoomComposer({
           <Input.TextArea
             value={inputText}
             onChange={(e) => onInputChange(e.target.value)}
+            onPaste={onPasteFiles}
             onPressEnter={(e) => {
               if (
                 e.key === 'Enter' &&
@@ -55,7 +59,7 @@ export function RoomComposer({
                 onSend();
               }
             }}
-            placeholder="输入文字，或拖放文件到此处…"
+            placeholder="输入文字，或粘贴、拖放文件到此处…"
             autoSize={isDesktop ? false : { minRows: 2, maxRows: 5 }}
             rows={isDesktop ? 3 : undefined}
             maxLength={maxTextLength}

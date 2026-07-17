@@ -125,6 +125,7 @@ function RoomComponent() {
     videoInputRef,
     handleFileChange,
     handleDrop,
+    handlePaste,
     handleDragOver,
     handleDragLeave,
     selectFile,
@@ -267,6 +268,7 @@ function RoomComponent() {
             onImageSelect={selectImage}
             onVideoSelect={selectVideo}
             onFileSelect={selectFile}
+            onPasteFiles={handlePaste}
           />
         }
         onDragOver={handleDragOver}

@@ -2,6 +2,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type ClipboardEvent,
   type DragEvent,
   type RefObject,
 } from 'react';
@@ -18,7 +19,7 @@ interface UseRoomUploadsOptions {
   uploadFiles: (files: File[]) => Promise<boolean>;
 }
 
-/** 文件选择、拖放和批次前置校验 */
+/** 文件选择、粘贴、拖放和批次前置校验 */
 export function useRoomUploads({
   room,
   notify,
@@ -65,6 +66,13 @@ export function useRoomUploads({
     submitFiles(Array.from(event.dataTransfer.files));
   };
 
+  const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = Array.from(event.clipboardData.files);
+    if (!files.length) return;
+    event.preventDefault();
+    submitFiles(files);
+  };
+
   const openPicker = (inputRef: RefObject<HTMLInputElement | null>) => {
     inputRef.current?.click();
   };
@@ -76,6 +84,7 @@ export function useRoomUploads({
     videoInputRef,
     handleFileChange,
     handleDrop,
+    handlePaste,
     handleDragOver: (event: DragEvent) => {
       event.preventDefault();
       setIsDragging(true);
