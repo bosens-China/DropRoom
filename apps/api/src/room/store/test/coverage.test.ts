@@ -54,6 +54,33 @@ describe('RoomStore 关键边界', () => {
     );
   });
 
+  it('跨房间累计预占容量不超过单实例上限', async () => {
+    const config = await createTestConfig({
+      maxBatchBytes: 10,
+      maxRoomFileBytes: 10,
+      maxGlobalFileBytes: 15,
+    });
+    const store = new RoomStore(config);
+    stores.push(store);
+    await store.initialize();
+    const firstOwner = store.createRoom('房主一');
+    const secondOwner = store.createRoom('房主二');
+
+    store.reserveUploadBatch(firstOwner.room.code, firstOwner.memberToken, [
+      { name: 'first.bin', size: 10, mimeType: 'application/octet-stream' },
+    ]);
+
+    expect(() =>
+      store.reserveUploadBatch(secondOwner.room.code, secondOwner.memberToken, [
+        {
+          name: 'second.bin',
+          size: 6,
+          mimeType: 'application/octet-stream',
+        },
+      ]),
+    ).toThrowError(ApiError);
+  });
+
   it('房主在宽限期内重连后保持房主身份', async () => {
     let currentTime = 1_000;
     const config = await createTestConfig({ disconnectGraceMs: 100 });

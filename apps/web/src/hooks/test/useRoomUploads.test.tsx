@@ -24,7 +24,7 @@ const room: RoomSnapshot = {
   reservedBytes: 0,
   maxFileBytes: 10,
   maxTextLength: 20,
-  maxFilesPerBatch: 1,
+  maxFilesPerBatch: 2,
   maxBatchBytes: 5,
   items: [],
 };
@@ -75,7 +75,11 @@ describe('useRoomUploads', () => {
   it('使用房间快照中的批次限制', () => {
     const invalidBatches = [
       [new File([], 'empty.txt')],
-      [new File(['a'], 'a.txt'), new File(['b'], 'b.txt')],
+      [
+        new File(['a'], 'a.txt'),
+        new File(['b'], 'b.txt'),
+        new File(['c'], 'c.txt'),
+      ],
       [new File(['123456'], 'large.txt')],
     ];
     for (const files of invalidBatches) {
@@ -86,16 +90,20 @@ describe('useRoomUploads', () => {
       expect(uploadFiles).not.toHaveBeenCalled();
     }
 
-    selectFiles([new File(['1234'], 'ok.txt')]);
-    expect(uploadFiles).toHaveBeenCalledOnce();
+    const files = [new File(['12'], 'one.txt'), new File(['34'], 'two.txt')];
+    selectFiles(files);
+    expect(uploadFiles).toHaveBeenCalledWith(files);
   });
 
-  it('粘贴文件时复用上传流程并阻止写入输入框', () => {
-    const file = new File(['1234'], 'clipboard.png', { type: 'image/png' });
-    const preventDefault = pasteFiles([file]);
+  it('粘贴多个文件时复用上传流程并阻止写入输入框', () => {
+    const files = [
+      new File(['12'], 'first.png', { type: 'image/png' }),
+      new File(['34'], 'second.png', { type: 'image/png' }),
+    ];
+    const preventDefault = pasteFiles(files);
 
     expect(preventDefault).toHaveBeenCalledOnce();
-    expect(uploadFiles).toHaveBeenCalledWith([file]);
+    expect(uploadFiles).toHaveBeenCalledWith(files);
   });
 
   it('粘贴纯文字时保留浏览器默认行为', () => {

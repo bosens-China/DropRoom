@@ -59,7 +59,7 @@ export abstract class RoomStoreUploads extends RoomStoreMembers {
       throw new ApiError(
         413,
         'BATCH_TOO_LARGE',
-        '单批文件总大小不能超过500 MB',
+        `单批文件总大小不能超过${this.config.maxBatchBytes}字节`,
       );
     }
     if (

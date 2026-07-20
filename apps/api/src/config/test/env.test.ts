@@ -11,9 +11,11 @@ describe('API 环境配置', () => {
     expect(config.corsOrigins).toEqual(DEFAULT_API_CONFIG.corsOrigins);
     expect(config.openApiEnabled).toBe(true);
     expect(config.swaggerPath).toBe('/docs');
+    expect(config.maxMembersPerRoom).toBe(9);
     expect(config.maxFilesPerBatch).toBe(50);
-    expect(config.maxBatchBytes).toBe(500_000_000);
-    expect(config.maxRoomFileBytes).toBe(2_000_000_000);
+    expect(config.maxBatchBytes).toBe(300_000_000);
+    expect(config.maxRoomFileBytes).toBe(1_000_000_000);
+    expect(config.maxGlobalFileBytes).toBe(30_000_000_000);
   });
 
   it('生产环境要求填写前端来源和 Redis 地址', () => {
