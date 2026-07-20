@@ -19,7 +19,12 @@ import {
   errorMessage,
   unwrapJson,
 } from '../api/client';
-import { fileFingerprint, uploadFileChunks } from '../utils/fileUpload';
+import {
+  fileFingerprint,
+  uploadFileChunks,
+  type UploadProgress,
+  type UploadViewState,
+} from '../utils/fileUpload';
 import { setMyNickname } from '../utils/preferences';
 import { updateRoomSnapshot } from '../utils/roomRegistry';
 
@@ -55,8 +60,30 @@ export function useRoomActions({
   );
   const uploadControllers = useRef(new Map<string, AbortController>());
   const retryFiles = useRef(new Map<string, File>());
-  const [, setUploadVersion] = useState(0);
-  const refreshUploadState = () => setUploadVersion((version) => version + 1);
+  const sendingMessage = useRef(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [uploadStates, setUploadStates] = useState<
+    Record<string, UploadViewState>
+  >({});
+
+  const setUploadState = (
+    fileId: string,
+    stage: UploadViewState['stage'],
+    progress: UploadProgress,
+  ) => {
+    setUploadStates((current) => ({
+      ...current,
+      [fileId]: { stage, ...progress },
+    }));
+  };
+  const clearUploadState = (fileId: string) => {
+    setUploadStates((current) => {
+      if (!(fileId in current)) return current;
+      const next = { ...current };
+      delete next[fileId];
+      return next;
+    });
+  };
 
   const commitRoom = (room: RoomSnapshot) => {
     setRoom(room);
@@ -77,6 +104,7 @@ export function useRoomActions({
     uploadControllers.current.forEach((controller) => controller.abort());
     uploadControllers.current.clear();
     retryFiles.current.clear();
+    setUploadStates({});
   };
 
   useEffect(
@@ -90,6 +118,9 @@ export function useRoomActions({
   );
 
   const sendMessage = async (content: string): Promise<boolean> => {
+    if (sendingMessage.current) return false;
+    sendingMessage.current = true;
+    setIsSendingMessage(true);
     try {
       const response = await apiClient.rooms[':code'].messages.$post(
         { param: { code: roomId }, json: { content } },
@@ -100,6 +131,9 @@ export function useRoomActions({
     } catch (error: unknown) {
       notify.error(errorMessage(error));
       return false;
+    } finally {
+      sendingMessage.current = false;
+      setIsSendingMessage(false);
     }
   };
 
@@ -168,9 +202,14 @@ export function useRoomActions({
   ): Promise<boolean> => {
     if (uploadControllers.current.has(fileItem.id)) return false;
     const controller = new AbortController();
+    let confirmedItem = fileItem;
     uploadControllers.current.set(fileItem.id, controller);
     retryFiles.current.set(fileItem.id, file);
-    refreshUploadState();
+    setUploadState(fileItem.id, 'uploading', {
+      uploadedBytes: fileItem.uploadedBytes,
+      chunkUploadedBytes: 0,
+      chunkBytes: 0,
+    });
 
     try {
       const uploaded = await uploadFileChunks(
@@ -178,19 +217,28 @@ export function useRoomActions({
         fileItem,
         file,
         controller.signal,
-        commitItem,
+        (item) => {
+          confirmedItem = item;
+          commitItem(item);
+        },
+        (progress) => setUploadState(fileItem.id, 'uploading', progress),
       );
       commitItem(uploaded);
       retryFiles.current.delete(fileItem.id);
+      clearUploadState(fileItem.id);
       return true;
     } catch {
       if (!controller.signal.aborted) {
+        setUploadState(fileItem.id, 'paused', {
+          uploadedBytes: confirmedItem.uploadedBytes,
+          chunkUploadedBytes: 0,
+          chunkBytes: 0,
+        });
         notify.error(`${file.name}：上传已暂停，可点击继续`);
       }
       return false;
     } finally {
       uploadControllers.current.delete(fileItem.id);
-      refreshUploadState();
     }
   };
 
@@ -246,6 +294,20 @@ export function useRoomActions({
         });
       }
 
+      setUploadStates((current) => {
+        const next = { ...current };
+        prepared.forEach((task) => {
+          if (!task.item) return;
+          next[task.item.id] = {
+            stage: 'queued',
+            uploadedBytes: task.item.uploadedBytes,
+            chunkUploadedBytes: 0,
+            chunkBytes: 0,
+          };
+        });
+        return next;
+      });
+
       const results = await uploadLimit.map(prepared, (task) =>
         task.item ? runUpload(task.item, task.source) : Promise.resolve(false),
       );
@@ -264,7 +326,7 @@ export function useRoomActions({
       ].cancel.$post({ param: { code: roomId, fileId } }, credentialedRequest);
       commitItem(await unwrapJson<FileItem>(response));
       retryFiles.current.delete(fileId);
-      refreshUploadState();
+      clearUploadState(fileId);
       return true;
     } catch (error: unknown) {
       notify.error(errorMessage(error));
@@ -281,7 +343,7 @@ export function useRoomActions({
       );
       commitItem(await unwrapJson<FileItem>(response));
       retryFiles.current.delete(fileId);
-      refreshUploadState();
+      clearUploadState(fileId);
       return true;
     } catch (error: unknown) {
       notify.error(errorMessage(error));
@@ -301,6 +363,11 @@ export function useRoomActions({
     );
     if (!item) return false;
     if (item.status === 'uploading') {
+      setUploadState(fileId, 'queued', {
+        uploadedBytes: item.uploadedBytes,
+        chunkUploadedBytes: 0,
+        chunkBytes: 0,
+      });
       return uploadLimit(() => runUpload(item, file));
     }
     if (!(await deleteFile(fileId))) return false;
@@ -308,11 +375,12 @@ export function useRoomActions({
   };
   const canRetryUpload = (fileId: string): boolean =>
     retryFiles.current.has(fileId) && !uploadControllers.current.has(fileId);
-  const isUploadingFile = (fileId: string): boolean =>
-    uploadControllers.current.has(fileId);
+  const uploadStateForFile = (fileId: string): UploadViewState | undefined =>
+    uploadStates[fileId];
 
   return {
     sendMessage,
+    isSendingMessage,
     renameRoom,
     changeNickname,
     leaveRoom,
@@ -322,6 +390,6 @@ export function useRoomActions({
     deleteFile,
     retryUpload,
     canRetryUpload,
-    isUploadingFile,
+    uploadStateForFile,
   };
 }

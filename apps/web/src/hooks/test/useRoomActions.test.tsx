@@ -1,6 +1,7 @@
 import type {
   FileItem,
   RoomSnapshot,
+  TextItem,
   UploadBatchResponse,
 } from '@droproom/api/domain';
 import { act, useEffect, useState } from 'react';
@@ -11,12 +12,14 @@ const requests = vi.hoisted(() => ({
   reserve: vi.fn(),
   uploadChunks: vi.fn(),
   deleteFile: vi.fn(),
+  sendMessage: vi.fn(),
 }));
 
 vi.mock('../../api/client', () => ({
   apiClient: {
     rooms: {
       ':code': {
+        messages: { $post: requests.sendMessage },
         uploads: { $post: requests.reserve },
         files: {
           ':fileId': {
@@ -124,8 +127,49 @@ describe('useRoomActions', () => {
     requests.reserve.mockReset();
     requests.uploadChunks.mockReset();
     requests.deleteFile.mockReset();
+    requests.sendMessage.mockReset();
     container = document.createElement('div');
     root = createRoot(container);
+  });
+
+  it('发送期间阻止重复提交并暴露加载状态', async () => {
+    await renderHarness();
+    let resolveRequest: ((response: Response) => void) | undefined;
+    requests.sendMessage.mockReturnValue(
+      new Promise<Response>((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+
+    let firstRequest: Promise<boolean> | undefined;
+    let duplicateResult = true;
+    await act(async () => {
+      firstRequest = currentActions().sendMessage('hello');
+      duplicateResult = await currentActions().sendMessage('hello');
+    });
+
+    expect(duplicateResult).toBe(false);
+    expect(currentActions().isSendingMessage).toBe(true);
+    expect(requests.sendMessage).toHaveBeenCalledOnce();
+
+    const item: TextItem = {
+      id: '00000000-0000-4000-8000-000000000030',
+      type: 'text',
+      senderId: MEMBER_ID,
+      senderNumberId: 1,
+      senderNickname: '测试用户',
+      content: 'hello',
+      createdAt: new Date().toISOString(),
+    };
+    await act(async () => {
+      resolveRequest?.(
+        new Response(JSON.stringify(item), {
+          status: 201,
+        }),
+      );
+      expect(await firstRequest).toBe(true);
+    });
+    expect(currentActions().isSendingMessage).toBe(false);
   });
 
   afterEach(async () => {
@@ -192,6 +236,7 @@ describe('useRoomActions', () => {
       expect.objectContaining({ id: FAILED_FILE_ID, uploadedBytes: 2 }),
       file,
       expect.any(AbortSignal),
+      expect.any(Function),
       expect.any(Function),
     );
   });

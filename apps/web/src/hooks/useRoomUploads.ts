@@ -32,6 +32,10 @@ export function useRoomUploads({
 
   const submitFiles = (files: File[]) => {
     if (!room || !files.length) return;
+    if (files.some((file) => file.size === 0)) {
+      notify.error('暂不支持上传空文件');
+      return;
+    }
     if (files.length > room.maxFilesPerBatch) {
       notify.error(`单次最多选择 ${room.maxFilesPerBatch} 个文件`);
       return;

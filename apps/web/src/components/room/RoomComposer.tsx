@@ -11,6 +11,7 @@ interface RoomComposerProps {
   inputText: string;
   maxTextLength: number;
   isDragging: boolean;
+  isSending: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onImageSelect: () => void;
@@ -24,6 +25,7 @@ export function RoomComposer({
   inputText,
   maxTextLength,
   isDragging,
+  isSending,
   onInputChange,
   onSend,
   onImageSelect,
@@ -56,7 +58,7 @@ export function RoomComposer({
                 !e.nativeEvent.isComposing
               ) {
                 e.preventDefault();
-                onSend();
+                if (!isSending) onSend();
               }
             }}
             placeholder="输入文字，或粘贴、拖放文件到此处…"
@@ -103,10 +105,11 @@ export function RoomComposer({
               type="primary"
               icon={<SendOutlined />}
               onClick={onSend}
-              disabled={!canSend}
+              loading={isSending}
+              disabled={!canSend || isSending}
               className="room-composer-send shrink-0 !px-4"
             >
-              发送
+              {isSending ? '发送中' : '发送'}
             </Button>
           </div>
         </div>

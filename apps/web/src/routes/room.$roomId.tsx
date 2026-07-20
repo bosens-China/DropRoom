@@ -40,12 +40,13 @@ function RoomComponent() {
     canJoin,
     myId,
     sendMessage,
+    isSendingMessage,
     uploadFiles,
     cancelUpload,
     deleteFile,
     retryUpload,
     canRetryUpload,
-    isUploadingFile,
+    uploadStateForFile,
     renameRoom,
     leaveRoom,
     dissolveRoom,
@@ -173,7 +174,9 @@ function RoomComponent() {
       messageApi.error(`文字最多 ${room.maxTextLength.toLocaleString()} 字`);
       return;
     }
-    if (await sendMessage(trimmed)) setInputText('');
+    if (await sendMessage(trimmed)) {
+      setInputText((current) => (current.trim() === trimmed ? '' : current));
+    }
   };
 
   const handleCopyInviteLink = () => {
@@ -251,7 +254,7 @@ function RoomComponent() {
             onDeleteFile={confirmations.deleteSharedFile}
             onRetryFile={retryUpload}
             canRetryFile={canRetryUpload}
-            isUploadingFile={isUploadingFile}
+            uploadStateForFile={uploadStateForFile}
           />
         }
         composer={
@@ -259,6 +262,7 @@ function RoomComponent() {
             inputText={inputText}
             maxTextLength={room.maxTextLength}
             isDragging={isDragging}
+            isSending={isSendingMessage}
             onInputChange={setInputText}
             onSend={handleSendText}
             onImageSelect={selectImage}

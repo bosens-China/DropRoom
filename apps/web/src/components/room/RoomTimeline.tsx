@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { TransferContentCard } from './TransferContentCard';
 import { formatFileSize } from '../../utils/format';
+import type { UploadViewState } from '../../utils/fileUpload';
 
 interface RoomTimelineProps {
   room: RoomSnapshot;
@@ -19,7 +20,7 @@ interface RoomTimelineProps {
   onDeleteFile: (fileId: string) => void;
   onRetryFile: (fileId: string) => void;
   canRetryFile: (fileId: string) => boolean;
-  isUploadingFile: (fileId: string) => boolean;
+  uploadStateForFile: (fileId: string) => UploadViewState | undefined;
 }
 
 function visibleTimeline(items: RoomItem[]): RoomItem[] {
@@ -38,13 +39,12 @@ export function RoomTimeline({
   onDeleteFile,
   onRetryFile,
   canRetryFile,
-  isUploadingFile,
+  uploadStateForFile,
 }: RoomTimelineProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const timeline = visibleTimeline(room.items);
   const pendingFiles = room.items.filter(
-    (item): item is FileItem =>
-      item.type === 'file' && !['ready', 'deleted'].includes(item.status),
+    (item): item is FileItem => item.type === 'file' && item.status !== 'ready',
   );
   const isOwner = room.ownerMemberId === myId;
 
@@ -90,7 +90,7 @@ export function RoomTimeline({
             file={file}
             isOwner={isOwner}
             myId={myId}
-            isUploading={isUploadingFile(file.id)}
+            uploadState={uploadStateForFile(file.id)}
             canRetry={canRetryFile(file.id)}
             onRetry={onRetryFile}
             onDelete={onDeleteFile}
@@ -106,7 +106,7 @@ interface PendingFileCardProps {
   file: FileItem;
   isOwner: boolean;
   myId: string;
-  isUploading: boolean;
+  uploadState?: UploadViewState;
   canRetry: boolean;
   onRetry: (id: string) => void;
   onDelete: (id: string) => void;
@@ -116,16 +116,30 @@ function PendingFileCard({
   file,
   isOwner,
   myId,
-  isUploading,
+  uploadState,
   canRetry,
   onRetry,
   onDelete,
 }: PendingFileCardProps) {
+  const uploadedBytes =
+    uploadState?.stage === 'uploading'
+      ? uploadState.uploadedBytes + uploadState.chunkUploadedBytes
+      : (uploadState?.uploadedBytes ?? file.uploadedBytes);
   const progress =
     file.size === 0
       ? 0
-      : Math.min(100, Math.round((file.uploadedBytes / file.size) * 100));
-  const canManage = isOwner || file.senderId === myId;
+      : Math.min(100, Math.round((uploadedBytes / file.size) * 100));
+  const chunkProgress =
+    uploadState?.chunkBytes && uploadState.stage === 'uploading'
+      ? Math.min(
+          100,
+          Math.round(
+            (uploadState.chunkUploadedBytes / uploadState.chunkBytes) * 100,
+          ),
+        )
+      : 0;
+  const canManage =
+    file.status !== 'deleted' && (isOwner || file.senderId === myId);
   const showRetry =
     ['uploading', 'failed'].includes(file.status) &&
     file.senderId === myId &&
@@ -177,21 +191,43 @@ function PendingFileCard({
           <>
             <Progress percent={progress} size="small" showInfo={false} />
             <p className="text-[10px] text-[var(--dr-text-muted)] mt-1">
-              {isUploading
-                ? `上传中 ${progress}%`
-                : showRetry
-                  ? `上传已暂停 ${progress}%`
-                  : `已上传 ${progress}%`}
+              {uploadState?.stage === 'queued'
+                ? `排队中，已上传 ${progress}%`
+                : uploadState?.stage === 'uploading'
+                  ? `上传中 ${progress}%`
+                  : uploadState?.stage === 'paused' || showRetry
+                    ? `上传已暂停 ${progress}%`
+                    : `已上传 ${progress}%`}
             </p>
+            {file.size > file.chunkSize &&
+              uploadState?.stage === 'uploading' && (
+                <div className="mt-2">
+                  <div className="mb-1 flex justify-between text-[10px] text-[var(--dr-text-muted)]">
+                    <span>当前分片</span>
+                    <span>{chunkProgress}%</span>
+                  </div>
+                  <Progress
+                    percent={chunkProgress}
+                    size="small"
+                    showInfo={false}
+                    strokeColor="var(--dr-primary)"
+                    trailColor="var(--dr-border)"
+                  />
+                </div>
+              )}
           </>
         )}
         {file.status !== 'uploading' && (
-          <p className="text-xs text-red-400">
-            {file.status === 'failed'
-              ? showRetry
-                ? '上传失败，可继续上传'
-                : '上传失败，请重新选择文件'
-              : '上传已取消'}
+          <p
+            className={`text-xs ${file.status === 'deleted' ? 'text-[var(--dr-text-muted)]' : 'text-red-400'}`}
+          >
+            {file.status === 'deleted'
+              ? '文件已删除或不可用'
+              : file.status === 'failed'
+                ? showRetry
+                  ? '上传失败，可继续上传'
+                  : '上传失败，请重新选择文件'
+                : '上传已取消'}
           </p>
         )}
       </div>

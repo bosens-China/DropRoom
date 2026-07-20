@@ -73,11 +73,18 @@ describe('useRoomUploads', () => {
   });
 
   it('使用房间快照中的批次限制', () => {
-    selectFiles([new File(['a'], 'a.txt'), new File(['b'], 'b.txt')]);
-    expect(notify.error).toHaveBeenLastCalledWith('单次最多选择 1 个文件');
-
-    selectFiles([new File(['123456'], 'large.txt')]);
-    expect(notify.error).toHaveBeenLastCalledWith('单批文件总大小不能超过 5 B');
+    const invalidBatches = [
+      [new File([], 'empty.txt')],
+      [new File(['a'], 'a.txt'), new File(['b'], 'b.txt')],
+      [new File(['123456'], 'large.txt')],
+    ];
+    for (const files of invalidBatches) {
+      notify.error.mockClear();
+      uploadFiles.mockClear();
+      selectFiles(files);
+      expect(notify.error).toHaveBeenCalledOnce();
+      expect(uploadFiles).not.toHaveBeenCalled();
+    }
 
     selectFiles([new File(['1234'], 'ok.txt')]);
     expect(uploadFiles).toHaveBeenCalledOnce();
