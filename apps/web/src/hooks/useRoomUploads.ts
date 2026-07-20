@@ -49,10 +49,14 @@ export function useRoomUploads({
       return;
     }
 
-    const availableSize =
-      room.maxFileBytes - room.usedBytes - room.reservedBytes;
+    const availableSize = Math.max(
+      0,
+      room.maxFileBytes - room.usedBytes - room.reservedBytes,
+    );
     if (batchSize > availableSize) {
-      notify.error('房间剩余容量不足，请删除文件后重试');
+      notify.error(
+        `房间剩余容量仅 ${formatFileSize(availableSize)}，本批需要 ${formatFileSize(batchSize)}`,
+      );
       return;
     }
 

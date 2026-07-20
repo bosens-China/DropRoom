@@ -1,5 +1,4 @@
 import { Button, Tooltip } from 'antd';
-import { useNavigate } from '@tanstack/react-router';
 import type { MemberView } from '@droproom/api/domain';
 import {
   CrownOutlined,
@@ -13,6 +12,7 @@ import { AppSettingsBar } from '../layout/AppSettingsBar';
 interface RoomMemberPanelProps {
   myId: string;
   members: MemberView[];
+  onExit: () => void;
   onEditNickname: () => void;
   onSaveNickname: (nickname: string) => Promise<boolean>;
 }
@@ -21,10 +21,10 @@ interface RoomMemberPanelProps {
 export function RoomMemberPanel({
   myId,
   members,
+  onExit,
   onEditNickname,
   onSaveNickname,
 }: RoomMemberPanelProps) {
-  const navigate = useNavigate();
   const me = members.find((member) => member.id === myId);
   const sorted = [...members].sort((a, b) => {
     if (a.isOwner) return -1;
@@ -40,7 +40,7 @@ export function RoomMemberPanel({
       <div className="shrink-0 px-4 py-3.5 border-b border-[var(--dr-border)]">
         <button
           type="button"
-          onClick={() => navigate({ to: '/' })}
+          onClick={onExit}
           aria-label="返回首页"
           className="border-none bg-transparent p-0 cursor-pointer hover:opacity-80 transition-opacity"
         >

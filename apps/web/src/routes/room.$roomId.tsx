@@ -194,6 +194,7 @@ function RoomComponent() {
     <RoomMemberPanel
       myId={myId}
       members={onlineMembers}
+      onExit={confirmations.exit}
       onEditNickname={() => setIsEditingNick(true)}
       onSaveNickname={changeNickname}
     />

@@ -60,6 +60,7 @@ function pasteFiles(files: File[]) {
 
 describe('useRoomUploads', () => {
   beforeEach(() => {
+    room.usedBytes = 0;
     notify.error.mockReset();
     uploadFiles.mockClear();
     container = document.createElement('div');
@@ -110,6 +111,15 @@ describe('useRoomUploads', () => {
     const preventDefault = pasteFiles([]);
 
     expect(preventDefault).not.toHaveBeenCalled();
+    expect(uploadFiles).not.toHaveBeenCalled();
+  });
+
+  it('容量不足提示使用房间快照计算出的剩余值', () => {
+    room.usedBytes = 9;
+    selectFiles([new File(['12'], 'limited.txt')]);
+
+    expect(notify.error).toHaveBeenCalledWith(expect.stringContaining('1 B'));
+    expect(notify.error).toHaveBeenCalledWith(expect.stringContaining('2 B'));
     expect(uploadFiles).not.toHaveBeenCalled();
   });
 });
