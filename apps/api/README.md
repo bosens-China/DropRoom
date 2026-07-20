@@ -70,7 +70,7 @@ DROPROOM_REDIS_URL=rediss://username:password@your-redis.example.com:6380
 | `DROPROOM_OPENAPI_JSON_PATH`  | `/openapi.json`             | OpenAPI 3.1 JSON路径                  |
 | `DROPROOM_SWAGGER_PATH`       | `/docs`                     | Swagger UI路径                        |
 | `DROPROOM_UPLOAD_CHUNK_BYTES` | `2000000`                   | 单个上传分片的最大字节数              |
-| `DROPROOM_GLOBAL_FILE_BYTES`  | `20000000000`               | 单实例全局文件容量安全上限            |
+| `DROPROOM_GLOBAL_FILE_BYTES`  | `30000000000`               | 单实例全局文件容量安全上限            |
 
 `DROPROOM_STORAGE_ROOT` 必须是 DropRoom 独占目录。服务启动时会清理该目录，进程重启视为所有临时房间销毁。
 
@@ -254,8 +254,9 @@ SSE 连接建立后首先发送完整 `room.snapshot`。后续可能收到：
 - 8位随机数字房间码
 - 每个房间最多9名成员
 - 单条文字最多20,000字符
-- 单批最多50个文件，合计不超过500,000,000字节
-- 单房间文件总量不超过2,000,000,000字节
+- 单批最多50个文件，合计不超过300,000,000字节；不另设单文件上限，单个文件仍受批次上限约束
+- 单房间文件总量不超过1,000,000,000字节
+- 单实例全部房间文件总量不超过30,000,000,000字节
 - 每名成员最多3个实际进行中的上传请求
 - 房间创建同 IP 每10分钟最多10次
 - 无效房间码同 IP 每分钟最多10次
