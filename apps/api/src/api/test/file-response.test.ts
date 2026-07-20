@@ -72,6 +72,33 @@ describe('文件 HTTP 响应', () => {
     );
     expect(await response.text()).toBe('data');
 
+    const [html] = store.reserveUploadBatch(
+      owner.room.code,
+      owner.memberToken,
+      [{ name: '页面.html', size: 3, mimeType: 'text/html' }],
+    );
+    await store.writeUploadChunk(
+      owner.room.code,
+      html?.id ?? '',
+      owner.memberToken,
+      new Blob(['<x>']).stream(),
+      0,
+      3,
+      sha256('<x>'),
+      html?.fingerprint ?? '',
+      new AbortController().signal,
+    );
+    const unsafeResponse = await app.request(
+      `/rooms/${owner.room.code}/files/${html?.id}/content?mode=inline`,
+      { headers: { Authorization: `Bearer ${receiver.memberToken}` } },
+    );
+    expect(unsafeResponse.headers.get('content-disposition')).toContain(
+      'attachment',
+    );
+    expect(unsafeResponse.headers.get('x-content-type-options')).toBe(
+      'nosniff',
+    );
+
     for (const connection of connections) {
       connection.unsubscribe();
     }

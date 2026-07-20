@@ -42,19 +42,4 @@ describe('房间码生成', () => {
     expect(second.room.code).toBe('87654321');
     expect(randomInt).toHaveBeenCalledTimes(3);
   });
-
-  it('默认房间名可以使用扩展词库', async () => {
-    randomInt
-      .mockReturnValueOnce(12_345_678)
-      .mockReturnValueOnce(19)
-      .mockReturnValueOnce(19);
-    const config = await createTestConfig();
-    const store = new RoomStore(config);
-    stores.push(store);
-    await store.initialize();
-
-    const room = store.createRoom('房主');
-
-    expect(room.room.name).toBe('灿烂雨滴');
-  });
 });

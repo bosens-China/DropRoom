@@ -163,6 +163,50 @@ describe('RoomStore 关键边界', () => {
     receiverConnection.unsubscribe();
   });
 
+  it('上传预留过期后释放容量并删除临时分片', async () => {
+    let currentTime = 1_000;
+    const config = await createTestConfig({
+      uploadChunkBytes: 3,
+      uploadReservationMs: 100,
+    });
+    const store = new RoomStore(config, () => currentTime);
+    stores.push(store);
+    await store.initialize();
+    const owner = store.createRoom('发送者');
+    const [file] = store.reserveUploadBatch(
+      owner.room.code,
+      owner.memberToken,
+      [{ name: 'expired.bin', size: 5, mimeType: 'application/octet-stream' }],
+    );
+    await store.writeUploadChunk(
+      owner.room.code,
+      file?.id ?? '',
+      owner.memberToken,
+      new Blob(['hel']).stream(),
+      0,
+      3,
+      sha256('hel'),
+      file?.fingerprint ?? '',
+      new AbortController().signal,
+    );
+    const partialPath = join(
+      config.storageRoot,
+      owner.room.code,
+      `${file?.id}.part`,
+    );
+    expect((await stat(partialPath)).isFile()).toBe(true);
+
+    currentTime += 101;
+    await store.runMaintenance();
+
+    const snapshot = store.getSnapshot(owner.room.code, owner.memberToken);
+    expect(snapshot.reservedBytes).toBe(0);
+    expect(snapshot.items).toContainEqual(
+      expect.objectContaining({ id: file?.id, status: 'failed' }),
+    );
+    await expect(stat(partialPath)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   it('房主主动解散后删除物理文件和房间状态', async () => {
     const config = await createTestConfig();
     const store = new RoomStore(config);

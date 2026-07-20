@@ -1,8 +1,8 @@
 import type { RoomSnapshot } from '@droproom/api/domain';
-import { act } from 'react';
+import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { saveRoomCredentials } from '../../utils/roomRegistry';
+import { getRoomSession, saveRoomCredentials } from '../../utils/roomRegistry';
 
 const requests = vi.hoisted(() => ({
   getRoom: vi.fn(),
@@ -37,8 +37,6 @@ import { ApiRequestError } from '../../api/client';
 import { useRoomSync } from '../useRoomSync';
 
 const ROOM_ID = '12345678';
-const MISSING_SESSION_MESSAGE = '缺少当前房间的成员凭证，请重新加入';
-
 function makeRoom(): RoomSnapshot {
   return {
     code: ROOM_ID,
@@ -61,22 +59,51 @@ function makeRoom(): RoomSnapshot {
 
 class TestEventSource {
   static readonly CLOSED = 2;
+  static instances: TestEventSource[] = [];
   readonly readyState = 1;
   onerror: (() => void) | null = null;
+  closed = false;
+  private readonly listeners = new Map<string, EventListener[]>();
 
-  addEventListener(): void {}
-  close(): void {}
+  constructor() {
+    TestEventSource.instances.push(this);
+  }
+
+  addEventListener(name: string, listener: EventListener): void {
+    const listeners = this.listeners.get(name) ?? [];
+    listeners.push(listener);
+    this.listeners.set(name, listeners);
+  }
+
+  emit(name: string, payload: unknown): void {
+    const event = new MessageEvent(name, { data: JSON.stringify(payload) });
+    this.listeners.get(name)?.forEach((listener) => listener(event));
+  }
+
+  close(): void {
+    this.closed = true;
+  }
 }
 
 let root: Root;
 let container: HTMLDivElement;
 const notify = { error: vi.fn() };
+let syncState: ReturnType<typeof useRoomSync> | undefined;
 
 function Harness() {
-  const { room, error, canJoin } = useRoomSync(ROOM_ID, notify);
-  return (
-    <div data-can-join={String(canJoin)}>{error ?? room?.name ?? '加载中'}</div>
-  );
+  const state = useRoomSync(ROOM_ID, notify);
+  useEffect(() => {
+    syncState = state;
+    return () => {
+      syncState = undefined;
+    };
+  }, [state]);
+  return null;
+}
+
+function currentSync(): ReturnType<typeof useRoomSync> {
+  if (!syncState) throw new Error('Hook 尚未渲染');
+  return syncState;
 }
 
 describe('useRoomSync', () => {
@@ -84,6 +111,7 @@ describe('useRoomSync', () => {
     localStorage.clear();
     requests.getRoom.mockReset();
     notify.error.mockReset();
+    TestEventSource.instances = [];
     vi.stubGlobal('EventSource', TestEventSource);
     container = document.createElement('div');
     root = createRoot(container);
@@ -91,6 +119,7 @@ describe('useRoomSync', () => {
 
   afterEach(() => {
     act(() => root.unmount());
+    syncState = undefined;
     vi.unstubAllGlobals();
   });
 
@@ -103,16 +132,15 @@ describe('useRoomSync', () => {
     await act(async () => {
       root.render(<Harness />);
     });
-    expect(container.textContent).toBe(MISSING_SESSION_MESSAGE);
-    expect(container.firstElementChild?.getAttribute('data-can-join')).toBe(
-      'true',
-    );
+    expect(currentSync().error).not.toBeNull();
+    expect(currentSync().canJoin).toBe(true);
 
     await act(async () => {
       saveRoomCredentials({ memberToken: 'a'.repeat(32), room });
     });
 
-    expect(container.textContent).toBe('邀请房间');
+    expect(currentSync().room?.code).toBe(ROOM_ID);
+    expect(currentSync().error).toBeNull();
     expect(requests.getRoom).toHaveBeenCalledOnce();
   });
 
@@ -132,9 +160,58 @@ describe('useRoomSync', () => {
       root.render(<Harness />);
     });
 
-    expect(container.textContent).toBe('房间不存在或已销毁');
-    expect(container.firstElementChild?.getAttribute('data-can-join')).toBe(
-      'false',
+    expect(currentSync().error).not.toBeNull();
+    expect(currentSync().canJoin).toBe(false);
+    expect(getRoomSession(ROOM_ID)).toBeNull();
+  });
+
+  it('消费实时事件并在房间销毁后清理会话', async () => {
+    const room = makeRoom();
+    saveRoomCredentials({ memberToken: 'a'.repeat(32), room });
+    requests.getRoom.mockResolvedValue(
+      new Response(JSON.stringify(room), { status: 200 }),
     );
+    await act(async () => root.render(<Harness />));
+
+    const events = TestEventSource.instances[0];
+    expect(events).toBeDefined();
+    await act(async () => {
+      events?.emit('presence.changed', {
+        type: 'presence.changed',
+        onlineMemberCount: 3,
+        members: [],
+      });
+      events?.emit('item.created', {
+        type: 'item.created',
+        item: {
+          id: '00000000-0000-4000-8000-000000000030',
+          type: 'text',
+          senderId: room.currentMemberId,
+          senderNumberId: 1,
+          senderNickname: '测试用户',
+          content: 'hello',
+          createdAt: new Date().toISOString(),
+        },
+      });
+      events?.emit('room.updated', {
+        type: 'room.updated',
+        name: '更新后的房间',
+        ownerMemberId: room.ownerMemberId,
+      });
+    });
+    expect(currentSync().room?.onlineMemberCount).toBe(3);
+    expect(currentSync().room?.items).toHaveLength(1);
+    expect(currentSync().room?.name).toBe('更新后的房间');
+
+    await act(async () => {
+      events?.emit('room.destroyed', {
+        type: 'room.destroyed',
+        reason: 'owner_dissolved',
+      });
+    });
+    expect(currentSync().room).toBeNull();
+    expect(currentSync().error).not.toBeNull();
+    expect(getRoomSession(ROOM_ID)).toBeNull();
+    expect(events?.closed).toBe(true);
   });
 });

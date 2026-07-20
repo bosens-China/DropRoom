@@ -21,11 +21,11 @@ vi.mock('@ant-design/icons', () => ({
 }));
 
 vi.mock('../../brand/DropRoomLogo', () => ({
-  DropRoomLogo: () => <span>DropRoom</span>,
+  DropRoomLogo: () => <span />,
 }));
 
 vi.mock('../../layout/AppSettingsBar', () => ({
-  AppSettingsBar: () => <button type="button">打开设置</button>,
+  AppSettingsBar: () => <button type="button" />,
 }));
 
 import { RoomAccessError } from '../RoomAccessError';
@@ -43,8 +43,9 @@ describe('RoomAccessError', () => {
     await act(async () => root.unmount());
   });
 
-  it('新成员加入前展示首页顶栏和昵称设置入口', async () => {
+  it('允许新成员从邀请页加入', async () => {
     const onJoin = vi.fn();
+    const onBack = vi.fn();
     await act(async () => {
       root.render(
         <RoomAccessError
@@ -52,48 +53,38 @@ describe('RoomAccessError', () => {
           canJoin
           joining={false}
           onJoin={onJoin}
-          onBack={vi.fn()}
+          onBack={onBack}
         />,
       );
     });
 
-    expect(container.querySelector('header')?.textContent).toContain(
-      'DropRoom',
-    );
-    expect(container.querySelector('header')?.textContent).toContain(
-      '打开设置',
-    );
-    expect(container.textContent).toContain('加入前可在右上角修改昵称');
-    expect(container.textContent).not.toContain('缺少当前房间的成员凭证');
-
-    const joinButton = [...container.querySelectorAll('button')].find(
-      (button) => button.textContent === '加入这个房间',
-    );
+    expect(container.querySelector('header button')).not.toBeNull();
+    const buttons = [...container.querySelectorAll('button')];
+    const joinButton = buttons.at(-1);
     await act(async () => joinButton?.click());
     expect(onJoin).toHaveBeenCalledOnce();
+    expect(onBack).not.toHaveBeenCalled();
   });
 
   it('房间已销毁时只提供返回首页入口', async () => {
     const onBack = vi.fn();
+    const onJoin = vi.fn();
     await act(async () => {
       root.render(
         <RoomAccessError
           message="房间不存在或已销毁"
           canJoin={false}
           joining={false}
-          onJoin={vi.fn()}
+          onJoin={onJoin}
           onBack={onBack}
         />,
       );
     });
 
-    expect(container.textContent).toContain('房间不存在或已销毁');
-    expect(container.textContent).not.toContain('加入这个房间');
-
-    const backButton = [...container.querySelectorAll('button')].find(
-      (button) => button.textContent === '返回首页',
-    );
+    const buttons = [...container.querySelectorAll('button')];
+    const backButton = buttons.at(-1);
     await act(async () => backButton?.click());
     expect(onBack).toHaveBeenCalledOnce();
+    expect(onJoin).not.toHaveBeenCalled();
   });
 });

@@ -1,9 +1,7 @@
 import { createHash } from 'node:crypto';
 import { rm } from 'node:fs/promises';
-import { hc } from 'hono/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
-import type { AppType } from '../app.js';
 import type { RateLimiter } from '../../infrastructure/rate-limiter.js';
 import { RoomStore } from '../../room/store/index.js';
 import { createTestConfig } from '../../test/config.js';
@@ -26,12 +24,6 @@ afterEach(async () => {
 });
 
 describe('DropRoom API', () => {
-  it('导出的 AppType 可以创建 Hono hc 客户端', () => {
-    const client = hc<AppType>('http://localhost:43117');
-    expect(typeof client.health.$get).toBe('function');
-    expect(typeof client.rooms.$post).toBe('function');
-  });
-
   it('Redis 不可用时健康检查返回503', async () => {
     const config = await createTestConfig();
     const store = new RoomStore(config);

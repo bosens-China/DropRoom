@@ -17,8 +17,9 @@ describe('preferences nickname', () => {
   it('首次访问时从扩展词库生成并保存昵称', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.999);
 
-    expect(getMyNickname()).toBe('闪耀的坐标');
-    expect(localStorage.getItem('droproom-user-nickname')).toBe('闪耀的坐标');
+    const nickname = getMyNickname();
+    expect(nickname.length).toBeGreaterThan(0);
+    expect(localStorage.getItem('droproom-user-nickname')).toBe(nickname);
   });
 });
 

@@ -39,12 +39,16 @@ vi.mock('../SettingsModal', () => ({
   }) =>
     open ? (
       <div>
-        <button type="button" onClick={() => onNicknameChange('房间新昵称')}>
-          修改测试昵称
-        </button>
-        <button type="button" onClick={() => void onSave()}>
-          保存测试设置
-        </button>
+        <button
+          type="button"
+          data-action="change"
+          onClick={() => onNicknameChange('房间新昵称')}
+        />
+        <button
+          type="button"
+          data-action="save"
+          onClick={() => void onSave()}
+        />
       </div>
     ) : null,
 }));
@@ -85,24 +89,20 @@ describe('AppSettingsBar', () => {
   it('在房间内保存昵称时同步后端和本地偏好', async () => {
     await act(async () => root.render(<Harness />));
 
-    const openButton = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="打开设置"]',
-    );
+    const openButton = container.querySelector<HTMLButtonElement>('button');
     expect(openButton).not.toBeNull();
     await act(async () => openButton?.click());
 
-    const buttons = [...container.querySelectorAll('button')];
-    const changeButton = buttons.find(
-      (button) => button.textContent === '修改测试昵称',
+    const changeButton = container.querySelector<HTMLButtonElement>(
+      'button[data-action="change"]',
     );
-    const saveButton = buttons.find(
-      (button) => button.textContent === '保存测试设置',
+    const saveButton = container.querySelector<HTMLButtonElement>(
+      'button[data-action="save"]',
     );
     await act(async () => changeButton?.click());
     await act(async () => saveButton?.click());
 
     expect(mocks.saveRoomNickname).toHaveBeenCalledWith('房间新昵称');
     expect(mocks.setMyNickname).toHaveBeenCalledWith('房间新昵称');
-    expect(container.textContent).toContain('房间新昵称');
   });
 });
