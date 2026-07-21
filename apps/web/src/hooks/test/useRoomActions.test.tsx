@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const requests = vi.hoisted(() => ({
   reserve: vi.fn(),
   uploadChunks: vi.fn(),
+  cancelUpload: vi.fn(),
   deleteFile: vi.fn(),
   sendMessage: vi.fn(),
 }));
@@ -23,6 +24,7 @@ vi.mock('../../api/client', () => ({
         uploads: { $post: requests.reserve },
         files: {
           ':fileId': {
+            cancel: { $post: requests.cancelUpload },
             $delete: requests.deleteFile,
           },
         },
@@ -126,6 +128,7 @@ describe('useRoomActions', () => {
   beforeEach(async () => {
     requests.reserve.mockReset();
     requests.uploadChunks.mockReset();
+    requests.cancelUpload.mockReset();
     requests.deleteFile.mockReset();
     requests.sendMessage.mockReset();
     container = document.createElement('div');
@@ -239,5 +242,44 @@ describe('useRoomActions', () => {
       expect.any(Function),
       expect.any(Function),
     );
+  });
+
+  it('取消排队文件后不会再启动对应上传请求', async () => {
+    await renderHarness();
+    const fileIds = [10, 11, 12, 13].map(
+      (value) => `00000000-0000-4000-8000-${String(value).padStart(12, '0')}`,
+    );
+    const reservedFiles = fileIds.map((id) => makeFile(id, 'uploading'));
+    requests.reserve.mockResolvedValueOnce(
+      new Response(JSON.stringify({ files: reservedFiles }), { status: 201 }),
+    );
+    requests.cancelUpload.mockResolvedValueOnce(
+      new Response(JSON.stringify(makeFile(fileIds[3]!, 'cancelled')), {
+        status: 200,
+      }),
+    );
+    const completeUploads: Array<() => void> = [];
+    requests.uploadChunks.mockImplementation(
+      (_roomId: string, item: FileItem) =>
+        new Promise<FileItem>((resolve) => {
+          completeUploads.push(() =>
+            resolve({ ...item, status: 'ready', uploadedBytes: item.size }),
+          );
+        }),
+    );
+
+    const upload = currentActions().uploadFiles(
+      fileIds.map((id) => new File(['hello'], `${id}.txt`)),
+    );
+    await vi.waitFor(() =>
+      expect(requests.uploadChunks).toHaveBeenCalledTimes(3),
+    );
+
+    await act(async () => {
+      await currentActions().cancelUpload(fileIds[3]!);
+      completeUploads.forEach((complete) => complete());
+      expect(await upload).toBe(false);
+    });
+    expect(requests.uploadChunks).toHaveBeenCalledTimes(3);
   });
 });

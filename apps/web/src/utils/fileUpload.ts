@@ -6,7 +6,7 @@ import {
   unwrapJson,
 } from '../api/client';
 
-const FINGERPRINT_SAMPLE_BYTES = 64 * 1024;
+const FINGERPRINT_CHUNK_BYTES = 2 * 1024 * 1024;
 const MAX_CHUNK_ATTEMPTS = 3;
 
 function toHex(buffer: ArrayBuffer): string {
@@ -23,19 +23,24 @@ export async function fileFingerprint(file: File): Promise<string> {
   const metadata = new TextEncoder().encode(
     `${file.name}\0${file.size}\0${file.lastModified}\0`,
   );
-  const first = new Uint8Array(
-    await file.slice(0, FINGERPRINT_SAMPLE_BYTES).arrayBuffer(),
-  );
-  const last = new Uint8Array(
-    await file
-      .slice(Math.max(0, file.size - FINGERPRINT_SAMPLE_BYTES))
-      .arrayBuffer(),
-  );
-  const sample = new Uint8Array(metadata.length + first.length + last.length);
-  sample.set(metadata);
-  sample.set(first, metadata.length);
-  sample.set(last, metadata.length + first.length);
-  return sha256(sample);
+  const chunkHashes: Uint8Array[] = [];
+
+  // 覆盖完整内容，同时限制每次进入内存的数据量。
+  for (let offset = 0; offset < file.size; offset += FINGERPRINT_CHUNK_BYTES) {
+    const chunk = await file
+      .slice(offset, offset + FINGERPRINT_CHUNK_BYTES)
+      .arrayBuffer();
+    chunkHashes.push(
+      new Uint8Array(await crypto.subtle.digest('SHA-256', chunk)),
+    );
+  }
+
+  const fingerprint = new Uint8Array(metadata.length + chunkHashes.length * 32);
+  fingerprint.set(metadata);
+  chunkHashes.forEach((hash, index) => {
+    fingerprint.set(hash, metadata.length + index * hash.length);
+  });
+  return sha256(fingerprint);
 }
 
 export interface UploadProgress {

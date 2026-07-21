@@ -32,16 +32,20 @@ export function useRoomUploads({
 
   const submitFiles = (files: File[]) => {
     if (!room || !files.length) return;
-    if (files.some((file) => file.size === 0)) {
+    const supportedFiles = files.filter((file) => file.size > 0);
+    if (supportedFiles.length !== files.length) {
       notify.error('暂不支持上传空文件');
-      return;
     }
-    if (files.length > room.maxFilesPerBatch) {
+    if (!supportedFiles.length) return;
+    if (supportedFiles.length > room.maxFilesPerBatch) {
       notify.error(`单次最多选择 ${room.maxFilesPerBatch} 个文件`);
       return;
     }
 
-    const batchSize = files.reduce((total, file) => total + file.size, 0);
+    const batchSize = supportedFiles.reduce(
+      (total, file) => total + file.size,
+      0,
+    );
     if (batchSize > room.maxBatchBytes) {
       notify.error(
         `单批文件总大小不能超过 ${formatFileSize(room.maxBatchBytes)}`,
@@ -60,7 +64,7 @@ export function useRoomUploads({
       return;
     }
 
-    void uploadFiles(files);
+    void uploadFiles(supportedFiles);
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {

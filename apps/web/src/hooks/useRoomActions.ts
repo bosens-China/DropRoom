@@ -65,7 +65,6 @@ export function useRoomActions({
   const [uploadStates, setUploadStates] = useState<
     Record<string, UploadViewState>
   >({});
-
   const setUploadState = (
     fileId: string,
     stage: UploadViewState['stage'],
@@ -78,7 +77,6 @@ export function useRoomActions({
   };
   const clearUploadState = (fileId: string) => {
     setUploadStates((current) => {
-      if (!(fileId in current)) return current;
       const next = { ...current };
       delete next[fileId];
       return next;
@@ -200,11 +198,11 @@ export function useRoomActions({
     fileItem: FileItem,
     file: File,
   ): Promise<boolean> => {
+    if (!retryFiles.current.has(fileItem.id)) return false;
     if (uploadControllers.current.has(fileItem.id)) return false;
     const controller = new AbortController();
     let confirmedItem = fileItem;
     uploadControllers.current.set(fileItem.id, controller);
-    retryFiles.current.set(fileItem.id, file);
     setUploadState(fileItem.id, 'uploading', {
       uploadedBytes: fileItem.uploadedBytes,
       chunkUploadedBytes: 0,
@@ -294,6 +292,9 @@ export function useRoomActions({
         });
       }
 
+      prepared.forEach((task) => {
+        if (task.item) retryFiles.current.set(task.item.id, task.source);
+      });
       setUploadStates((current) => {
         const next = { ...current };
         prepared.forEach((task) => {
@@ -320,15 +321,17 @@ export function useRoomActions({
 
   const cancelUpload = async (fileId: string): Promise<boolean> => {
     uploadControllers.current.get(fileId)?.abort();
+    const retryFile = retryFiles.current.get(fileId);
+    retryFiles.current.delete(fileId);
     try {
       const response = await apiClient.rooms[':code'].files[
         ':fileId'
       ].cancel.$post({ param: { code: roomId, fileId } }, credentialedRequest);
       commitItem(await unwrapJson<FileItem>(response));
-      retryFiles.current.delete(fileId);
       clearUploadState(fileId);
       return true;
     } catch (error: unknown) {
+      if (retryFile) retryFiles.current.set(fileId, retryFile);
       notify.error(errorMessage(error));
       return false;
     }
@@ -374,7 +377,9 @@ export function useRoomActions({
     return uploadFiles([file]);
   };
   const canRetryUpload = (fileId: string): boolean =>
-    retryFiles.current.has(fileId) && !uploadControllers.current.has(fileId);
+    uploadStates[fileId]?.stage === 'paused' &&
+    retryFiles.current.has(fileId) &&
+    !uploadControllers.current.has(fileId);
   const uploadStateForFile = (fileId: string): UploadViewState | undefined =>
     uploadStates[fileId];
 

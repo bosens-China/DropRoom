@@ -1,4 +1,5 @@
 import type { FileItem } from '@droproom/api/domain';
+import { webcrypto } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const MockApiRequestError = vi.hoisted(
@@ -42,7 +43,11 @@ vi.mock('../../api/client', () => ({
   },
 }));
 
-import { uploadFileChunks, type UploadProgress } from '../fileUpload';
+import {
+  fileFingerprint,
+  uploadFileChunks,
+  type UploadProgress,
+} from '../fileUpload';
 
 const initialFile: FileItem = {
   id: '00000000-0000-4000-8000-000000000010',
@@ -123,6 +128,19 @@ class FakeXMLHttpRequest extends EventTarget {
     this.dispatchEvent(new Event('abort'));
   }
 }
+
+describe('fileFingerprint', () => {
+  it('中间内容不同的同名文件不会命中同一续传任务', async () => {
+    vi.stubGlobal('crypto', webcrypto);
+    const first = makeFingerprintFile(1);
+    const second = makeFingerprintFile(2);
+
+    await expect(fileFingerprint(first)).resolves.not.toBe(
+      await fileFingerprint(second),
+    );
+    vi.unstubAllGlobals();
+  });
+});
 
 describe('uploadFileChunks', () => {
   beforeEach(() => {
@@ -247,6 +265,20 @@ function makeFile(): File {
         value: async () => bytes.buffer,
       });
       return blob;
+    },
+  } as File;
+}
+
+function makeFingerprintFile(middleByte: number): File {
+  const bytes = new Uint8Array(140_001);
+  bytes[70_000] = middleByte;
+  return {
+    name: 'same.bin',
+    size: bytes.byteLength,
+    lastModified: 1,
+    slice: (start: number, end: number) => {
+      const chunk = bytes.slice(start, end);
+      return { arrayBuffer: async () => chunk.buffer } as Blob;
     },
   } as File;
 }

@@ -96,6 +96,14 @@ describe('useRoomUploads', () => {
     expect(uploadFiles).toHaveBeenCalledWith(files);
   });
 
+  it('跳过空文件并继续上传同批有效文件', () => {
+    const validFile = new File(['12'], 'valid.txt');
+    selectFiles([new File([], 'empty.txt'), validFile]);
+
+    expect(notify.error).toHaveBeenCalledWith('暂不支持上传空文件');
+    expect(uploadFiles).toHaveBeenCalledWith([validFile]);
+  });
+
   it('粘贴多个文件时复用上传流程并阻止写入输入框', () => {
     const files = [
       new File(['12'], 'first.png', { type: 'image/png' }),
