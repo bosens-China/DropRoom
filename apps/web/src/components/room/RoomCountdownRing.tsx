@@ -36,7 +36,7 @@ export function RoomCountdownRing({ room, timeLeft }: RoomCountdownRingProps) {
             showInfo={false}
             size="small"
             strokeColor={strokeColor}
-            trailColor="var(--dr-border)"
+            railColor="var(--dr-border)"
           />
         </div>
         <span

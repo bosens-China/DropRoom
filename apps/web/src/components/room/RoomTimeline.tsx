@@ -211,7 +211,7 @@ function PendingFileCard({
                     size="small"
                     showInfo={false}
                     strokeColor="var(--dr-primary)"
-                    trailColor="var(--dr-border)"
+                    railColor="var(--dr-border)"
                   />
                 </div>
               )}

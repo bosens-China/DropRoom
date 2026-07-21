@@ -122,7 +122,7 @@ export function RoomHeader({
                 showInfo={false}
                 size="small"
                 strokeColor={storageColor}
-                trailColor="var(--dr-border)"
+                railColor="var(--dr-border)"
               />
             </div>
             <span className="shrink-0 whitespace-nowrap font-mono text-[11px] text-[var(--dr-text-muted)]">
@@ -162,7 +162,7 @@ export function RoomHeader({
               showInfo={false}
               size="small"
               strokeColor={storageColor}
-              trailColor="var(--dr-border)"
+              railColor="var(--dr-border)"
             />
           </div>
           <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[var(--dr-text-muted)]">
