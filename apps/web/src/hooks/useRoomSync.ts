@@ -5,6 +5,7 @@ import type {
   RoomSnapshot,
 } from '@droproom/api/domain';
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { getBrowserNotificationsEnabled } from '../utils/preferences';
 import {
   ApiRequestError,
   apiClient,
@@ -77,6 +78,32 @@ function applyRoomEvent(
   };
 }
 
+function showBrowserNotification(
+  room: RoomSnapshot | null,
+  event: RoomEventPayload,
+): void {
+  if (
+    !room ||
+    event.type !== 'item.created' ||
+    event.item.senderId === room.currentMemberId ||
+    !getBrowserNotificationsEnabled() ||
+    !('Notification' in window) ||
+    Notification.permission !== 'granted' ||
+    document.visibilityState === 'visible'
+  ) {
+    return;
+  }
+
+  const body =
+    event.item.type === 'text'
+      ? event.item.content.slice(0, 160)
+      : `发送了文件：${event.item.name}`;
+  new Notification(`${room.name} · ${event.item.senderNickname}`, {
+    body,
+    tag: `droproom-${event.item.id}`,
+  });
+}
+
 export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
   const session = getRoomSession(roomId);
   const sessionKey = useSyncExternalStore(
@@ -134,6 +161,10 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
             setError('房间已销毁');
             return;
           }
+          showBrowserNotification(
+            getRoomSession(roomId)?.room ?? null,
+            payload,
+          );
           setRoom((current) => {
             const next = applyRoomEvent(current, payload);
             if (next) updateRoomSnapshot(next);

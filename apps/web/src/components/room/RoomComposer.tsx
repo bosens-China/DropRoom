@@ -1,11 +1,13 @@
-import { Button, Grid, Input, Tooltip } from 'antd';
+import { Button, Grid, Input, Tooltip, type GetRef } from 'antd';
 import {
   FileOutlined,
   PictureOutlined,
   PlaySquareOutlined,
   SendOutlined,
 } from '@ant-design/icons';
-import type { ClipboardEventHandler } from 'react';
+import { useEffect, useRef, type ClipboardEventHandler } from 'react';
+
+type TextAreaRef = GetRef<typeof Input.TextArea>;
 
 interface RoomComposerProps {
   inputText: string;
@@ -36,6 +38,29 @@ export function RoomComposer({
   const canSend = inputText.trim().length > 0;
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
+  const inputRef = useRef<TextAreaRef>(null);
+
+  useEffect(() => {
+    const selectComposerText = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        event.key.toLowerCase() !== 'a' ||
+        (!event.ctrlKey && !event.metaKey) ||
+        event.altKey ||
+        event.shiftKey ||
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      inputRef.current?.focus({ cursor: 'all' });
+    };
+
+    window.addEventListener('keydown', selectComposerText);
+    return () => window.removeEventListener('keydown', selectComposerText);
+  }, []);
 
   return (
     <div className="room-composer w-full flex flex-col px-3 sm:px-4 py-3 dr-chat-bg dr-safe-bottom max-md:shrink-0 md:h-full md:min-h-0">
@@ -48,6 +73,7 @@ export function RoomComposer({
       <div className="room-composer-card dr-surface flex flex-col overflow-hidden rounded-xl border shadow-sm md:min-h-0 md:flex-1">
         <div className="room-composer-input-wrap flex flex-col md:min-h-0 md:flex-1">
           <Input.TextArea
+            ref={inputRef}
             value={inputText}
             onChange={(e) => onInputChange(e.target.value)}
             onPaste={onPasteFiles}

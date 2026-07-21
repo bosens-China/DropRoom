@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   setMyNickname: vi.fn(),
   saveRoomNickname: vi.fn(),
+  setBrowserNotificationsEnabled: vi.fn(),
   setThemeMode: vi.fn(),
 }));
 
@@ -23,22 +24,31 @@ vi.mock('../../../hooks/useAppTheme', () => ({
 }));
 
 vi.mock('../../../utils/preferences', () => ({
+  getBrowserNotificationsEnabled: () => false,
   getMyNickname: () => '本地昵称',
+  setBrowserNotificationsEnabled: mocks.setBrowserNotificationsEnabled,
   setMyNickname: mocks.setMyNickname,
 }));
 
 vi.mock('../SettingsModal', () => ({
   SettingsModal: ({
     open,
+    onBrowserNotificationsChange,
     onNicknameChange,
     onSave,
   }: {
     open: boolean;
+    onBrowserNotificationsChange: (enabled: boolean) => void;
     onNicknameChange: (value: string) => void;
     onSave: () => void | Promise<void>;
   }) =>
     open ? (
       <div>
+        <button
+          type="button"
+          data-action="notifications"
+          onClick={() => onBrowserNotificationsChange(true)}
+        />
         <button
           type="button"
           data-action="change"
@@ -79,11 +89,13 @@ describe('AppSettingsBar', () => {
     root = createRoot(container);
     mocks.setMyNickname.mockReset();
     mocks.saveRoomNickname.mockReset();
+    mocks.setBrowserNotificationsEnabled.mockReset();
     mocks.setThemeMode.mockReset();
   });
 
   afterEach(async () => {
     await act(async () => root.unmount());
+    vi.unstubAllGlobals();
   });
 
   it('在房间内保存昵称时同步后端和本地偏好', async () => {
@@ -104,5 +116,28 @@ describe('AppSettingsBar', () => {
 
     expect(mocks.saveRoomNickname).toHaveBeenCalledWith('房间新昵称');
     expect(mocks.setMyNickname).toHaveBeenCalledWith('房间新昵称');
+  });
+
+  it('开启通知时申请浏览器权限并保存偏好', async () => {
+    const requestPermission = vi.fn().mockResolvedValue('granted');
+    vi.stubGlobal('Notification', {
+      permission: 'default',
+      requestPermission,
+    });
+    await act(async () => root.render(<Harness />));
+
+    const openButton = container.querySelector<HTMLButtonElement>('button');
+    await act(async () => openButton?.click());
+    const notificationsButton = container.querySelector<HTMLButtonElement>(
+      'button[data-action="notifications"]',
+    );
+    const saveButton = container.querySelector<HTMLButtonElement>(
+      'button[data-action="save"]',
+    );
+    await act(async () => notificationsButton?.click());
+    await act(async () => saveButton?.click());
+
+    expect(requestPermission).toHaveBeenCalledOnce();
+    expect(mocks.setBrowserNotificationsEnabled).toHaveBeenCalledWith(true);
   });
 });

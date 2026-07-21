@@ -3,7 +3,9 @@ import { message } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import {
+  getBrowserNotificationsEnabled,
   getMyNickname,
+  setBrowserNotificationsEnabled,
   setMyNickname,
   type ThemeMode,
 } from '../../utils/preferences';
@@ -28,12 +30,16 @@ export function AppSettingsBar({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [nicknameInput, setNicknameInput] = useState(localNickname);
   const [themeInput, setThemeInput] = useState<ThemeMode>(themeMode);
+  const [browserNotificationsInput, setBrowserNotificationsInput] = useState(
+    getBrowserNotificationsEnabled,
+  );
   const [saving, setSaving] = useState(false);
   const nickname = roomNickname ?? localNickname;
 
   const openSettings = () => {
     setNicknameInput(nickname);
     setThemeInput(themeMode);
+    setBrowserNotificationsInput(getBrowserNotificationsEnabled());
     setSettingsOpen(true);
   };
 
@@ -46,6 +52,24 @@ export function AppSettingsBar({
 
     setSaving(true);
     try {
+      if (browserNotificationsInput) {
+        if (!('Notification' in window)) {
+          messageApi.error('当前浏览器不支持系统通知');
+          setBrowserNotificationsInput(false);
+          setBrowserNotificationsEnabled(false);
+          return;
+        }
+        const permission =
+          Notification.permission === 'granted'
+            ? 'granted'
+            : await Notification.requestPermission().catch(() => 'denied');
+        if (permission !== 'granted') {
+          messageApi.error('未获得通知权限，请在浏览器设置中允许通知');
+          setBrowserNotificationsInput(false);
+          setBrowserNotificationsEnabled(false);
+          return;
+        }
+      }
       if (
         onNicknameSave &&
         nextNickname !== nickname &&
@@ -56,6 +80,7 @@ export function AppSettingsBar({
       setMyNickname(nextNickname);
       setLocalNickname(nextNickname);
       setThemeMode(themeInput);
+      setBrowserNotificationsEnabled(browserNotificationsInput);
       setSettingsOpen(false);
       messageApi.success('设置已保存');
     } finally {
@@ -109,9 +134,11 @@ export function AppSettingsBar({
         open={settingsOpen}
         nickname={nicknameInput}
         themeMode={themeInput}
+        browserNotifications={browserNotificationsInput}
         saving={saving}
         onNicknameChange={setNicknameInput}
         onThemeModeChange={setThemeInput}
+        onBrowserNotificationsChange={setBrowserNotificationsInput}
         onSave={saveSettings}
         onClose={() => setSettingsOpen(false)}
       />

@@ -1,12 +1,14 @@
 const LOCAL_NICKNAME_KEY = 'droproom-user-nickname';
 const THEME_MODE_KEY = 'droproom-theme-mode';
 const ROOM_LAYOUT_KEY = 'droproom-room-layout';
+const BROWSER_NOTIFICATIONS_KEY = 'droproom-browser-notifications';
 
 /**
  * 浏览器 localStorage 键一览（均仅存于本机，不上传服务器）：
  * - droproom-user-nickname：用户昵称
  * - droproom-theme-mode：主题（light / dark / system）
  * - droproom-room-layout：房间页分栏尺寸（侧栏宽度、发送区高度）
+ * - droproom-browser-notifications：是否显示浏览器消息通知
  * - droproom-joined-rooms：已加入房间列表（见 roomRegistry.ts）
  */
 
@@ -92,6 +94,14 @@ export function getThemeMode(): ThemeMode {
 
 export function setThemeMode(mode: ThemeMode): void {
   localStorage.setItem(THEME_MODE_KEY, mode);
+}
+
+export function getBrowserNotificationsEnabled(): boolean {
+  return localStorage.getItem(BROWSER_NOTIFICATIONS_KEY) === 'true';
+}
+
+export function setBrowserNotificationsEnabled(enabled: boolean): void {
+  localStorage.setItem(BROWSER_NOTIFICATIONS_KEY, String(enabled));
 }
 
 export function getRoomLayoutPrefs(): RoomLayoutPrefs {

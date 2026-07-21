@@ -1,12 +1,28 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  getBrowserNotificationsEnabled,
   getMyNickname,
   getRoomLayoutPrefs,
   getThemeMode,
   resolveTheme,
+  setBrowserNotificationsEnabled,
   setRoomLayoutPrefs,
   setThemeMode,
 } from '../preferences';
+
+describe('preferences browser notifications', () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('默认关闭并保存用户选择', () => {
+    expect(getBrowserNotificationsEnabled()).toBe(false);
+    setBrowserNotificationsEnabled(true);
+    expect(getBrowserNotificationsEnabled()).toBe(true);
+    setBrowserNotificationsEnabled(false);
+    expect(getBrowserNotificationsEnabled()).toBe(false);
+  });
+});
 
 describe('preferences nickname', () => {
   afterEach(() => {

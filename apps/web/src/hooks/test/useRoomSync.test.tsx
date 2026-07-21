@@ -2,6 +2,7 @@ import type { RoomSnapshot } from '@droproom/api/domain';
 import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setBrowserNotificationsEnabled } from '../../utils/preferences';
 import { getRoomSession, saveRoomCredentials } from '../../utils/roomRegistry';
 
 const requests = vi.hoisted(() => ({
@@ -120,6 +121,7 @@ describe('useRoomSync', () => {
   afterEach(() => {
     act(() => root.unmount());
     syncState = undefined;
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -213,5 +215,42 @@ describe('useRoomSync', () => {
     expect(currentSync().error).not.toBeNull();
     expect(getRoomSession(ROOM_ID)).toBeNull();
     expect(events?.closed).toBe(true);
+  });
+
+  it('页面在后台时通知其他成员发送的新内容', async () => {
+    const room = makeRoom();
+    const BrowserNotification = vi.fn();
+    Object.defineProperty(BrowserNotification, 'permission', {
+      value: 'granted',
+    });
+    vi.stubGlobal('Notification', BrowserNotification);
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    setBrowserNotificationsEnabled(true);
+    saveRoomCredentials({ memberToken: 'a'.repeat(32), room });
+    requests.getRoom.mockResolvedValue(
+      new Response(JSON.stringify(room), { status: 200 }),
+    );
+    await act(async () => root.render(<Harness />));
+
+    const events = TestEventSource.instances[0];
+    await act(async () => {
+      events?.emit('item.created', {
+        type: 'item.created',
+        item: {
+          id: '00000000-0000-4000-8000-000000000031',
+          type: 'text',
+          senderId: '00000000-0000-4000-8000-000000000002',
+          senderNumberId: 2,
+          senderNickname: '另一位成员',
+          content: '后台消息',
+          createdAt: new Date().toISOString(),
+        },
+      });
+    });
+
+    expect(BrowserNotification).toHaveBeenCalledWith(
+      '邀请房间 · 另一位成员',
+      expect.objectContaining({ body: '后台消息' }),
+    );
   });
 });
