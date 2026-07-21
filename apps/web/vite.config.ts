@@ -5,6 +5,15 @@ import UnoCSS from 'unocss/vite';
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:43117',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
   build: {
     target: ['chrome111', 'edge111', 'firefox114', 'safari16.4', 'ios16.4'],
   },

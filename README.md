@@ -41,8 +41,9 @@ pnpm infra:down
 
 本地开发无需配置环境变量。独立部署时参考
 [`apps/api/.env.example`](./apps/api/.env.example) 和
-[`apps/web/.env.example`](./apps/web/.env.example)，Web 通过
-`VITE_API_BASE_URL` 指向 Hono API；Docker 生产镜像默认使用同源 `/api`。
+[`apps/web/.env.example`](./apps/web/.env.example)。本地开发时 Web 默认通过同源
+`/api` 访问，Vite 将请求固定代理到 `http://localhost:43117`；独立部署可通过
+`VITE_API_BASE_URL` 覆盖，Docker 生产镜像同样默认使用同源 `/api`。
 
 ## 常用命令
 

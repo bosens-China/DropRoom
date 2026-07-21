@@ -3,7 +3,7 @@ import type { ErrorResponse } from '@droproom/api/domain';
 import { hc } from 'hono/client';
 
 export const API_BASE_URL = new URL(
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:43117',
+  import.meta.env.VITE_API_BASE_URL ?? '/api',
   window.location.origin,
 ).toString();
 

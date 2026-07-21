@@ -6,6 +6,12 @@ describe('API 客户端地址', () => {
     vi.resetModules();
   });
 
+  it('开发环境默认通过当前站点的 /api 代理访问后端', async () => {
+    const { API_BASE_URL } = await import('../client');
+
+    expect(API_BASE_URL).toBe(`${window.location.origin}/api`);
+  });
+
   it('将生产环境的相对 API 地址解析为当前站点的绝对地址', async () => {
     vi.stubEnv('VITE_API_BASE_URL', '/api');
 
