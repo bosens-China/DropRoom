@@ -25,7 +25,11 @@ vi.mock('@ant-design/icons', () => ({
 }));
 
 vi.mock('../../brand/DropRoomLogo', () => ({
-  DropRoomLogo: () => <span />,
+  DropRoomLogo: ({ onClick }: { onClick?: () => void }) => (
+    <button type="button" onClick={onClick}>
+      DropRoom
+    </button>
+  ),
 }));
 
 vi.mock('../../layout/AppSettingsBar', () => ({
@@ -47,7 +51,7 @@ describe('RoomMemberPanel', () => {
     await act(async () => root.unmount());
   });
 
-  it('点击品牌入口时交给房间退出流程处理', async () => {
+  it('点击品牌入口时复用房间退出确认流程', async () => {
     const onExit = vi.fn();
     await act(async () => {
       root.render(

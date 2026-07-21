@@ -27,14 +27,7 @@ export function RoomListPanel({
     <div className="flex flex-col h-full bg-slate-50 border-r border-slate-200/80">
       {/* 品牌 */}
       <div className="px-4 pt-5 pb-3 shrink-0">
-        <button
-          type="button"
-          onClick={() => navigate({ to: '/' })}
-          aria-label="返回多房间工作台"
-          className="border-none bg-transparent p-0 cursor-pointer hover:opacity-80 transition-opacity"
-        >
-          <DropRoomLogo size="sm" />
-        </button>
+        <DropRoomLogo size="sm" />
       </div>
 
       {/* 创建 / 加入 */}

@@ -38,14 +38,7 @@ export function RoomMemberPanel({
     <div className="flex flex-col h-full w-full dr-sidebar border-r">
       {/* 品牌 Logo */}
       <div className="shrink-0 px-4 py-3.5 border-b border-[var(--dr-border)]">
-        <button
-          type="button"
-          onClick={onExit}
-          aria-label="返回首页"
-          className="border-none bg-transparent p-0 cursor-pointer hover:opacity-80 transition-opacity"
-        >
-          <DropRoomLogo size="sm" />
-        </button>
+        <DropRoomLogo size="sm" onClick={onExit} />
       </div>
 
       {/* 成员标题 */}

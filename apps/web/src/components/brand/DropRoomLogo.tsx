@@ -1,9 +1,12 @@
+import { useNavigate } from '@tanstack/react-router';
+
 interface DropRoomLogoProps {
   /** 是否显示文字标题 */
   showText?: boolean;
   /** 尺寸变体 */
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  onClick?: () => void;
 }
 
 const sizeMap = {
@@ -17,11 +20,18 @@ export function DropRoomLogo({
   showText = true,
   size = 'md',
   className = '',
+  onClick,
 }: DropRoomLogoProps) {
+  const navigate = useNavigate();
   const s = sizeMap[size];
 
   return (
-    <div className={`inline-flex items-center gap-2.5 ${className}`}>
+    <button
+      type="button"
+      onClick={() => (onClick ? onClick() : navigate({ to: '/' }))}
+      aria-label="返回首页"
+      className={`inline-flex items-center gap-2.5 border-none bg-transparent p-0 cursor-pointer transition-opacity hover:opacity-80 ${className}`}
+    >
       <img
         src="/favicon.svg"
         alt=""
@@ -35,6 +45,6 @@ export function DropRoomLogo({
           Drop<span className="text-[#006EFF]">Room</span>
         </span>
       )}
-    </div>
+    </button>
   );
 }
