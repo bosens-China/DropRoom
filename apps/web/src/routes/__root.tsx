@@ -1,3 +1,4 @@
+import { StyleProvider } from '@ant-design/cssinjs';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { ConfigProvider, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -36,7 +37,9 @@ function ThemedApp() {
 function RootComponent() {
   return (
     <AppThemeProvider>
-      <ThemedApp />
+      <StyleProvider layer>
+        <ThemedApp />
+      </StyleProvider>
     </AppThemeProvider>
   );
 }

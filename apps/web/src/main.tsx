@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
-import '@unocss/reset/tailwind.css';
 import 'virtual:uno.css';
 import './index.css';
 

@@ -1,3 +1,6 @@
+@layer reset, antd;
+@import '@unocss/reset/tailwind.css' layer(reset);
+
 /* DropRoom 全局基础样式 — 浏览器差异由 UnoCSS reset 统一处理 */
 html,
 body,
@@ -122,26 +125,6 @@ body {
 .dr-card-other {
   background: var(--dr-card-other);
   border-color: var(--dr-border);
-}
-
-/* UnoCSS reset 会冲掉 Ant Design 主按钮默认态，此处恢复 */
-.ant-btn-primary:not(:disabled):not(.ant-btn-dangerous) {
-  background-color: var(--dr-primary);
-  color: #fff;
-  border-color: var(--dr-primary);
-}
-
-.ant-btn-primary:not(:disabled):not(.ant-btn-dangerous):hover {
-  background-color: var(--dr-primary-hover);
-  border-color: var(--dr-primary-hover);
-  color: #fff;
-}
-
-.ant-btn-primary:disabled {
-  background-color: var(--dr-primary-soft);
-  border-color: transparent;
-  color: var(--dr-text-muted);
-  opacity: 1;
 }
 
 /* 房间底部输入区 */
