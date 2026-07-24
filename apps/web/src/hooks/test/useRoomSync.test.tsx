@@ -52,6 +52,7 @@ function makeRoom(): RoomSnapshot {
     reservedBytes: 0,
     maxFileBytes: 2_000_000_000,
     maxTextLength: 20_000,
+    longTextFileThreshold: 5_000,
     maxFilesPerBatch: 50,
     maxBatchBytes: 500_000_000,
     items: [],
@@ -110,6 +111,7 @@ function currentSync(): ReturnType<typeof useRoomSync> {
 describe('useRoomSync', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     requests.getRoom.mockReset();
     notify.error.mockReset();
     TestEventSource.instances = [];
@@ -208,13 +210,19 @@ describe('useRoomSync', () => {
     await act(async () => {
       events?.emit('room.destroyed', {
         type: 'room.destroyed',
-        reason: 'owner_dissolved',
+        reason: 'dissolved',
       });
     });
     expect(currentSync().room).toBeNull();
-    expect(currentSync().error).not.toBeNull();
+    expect(currentSync().error).toBe('房间已被房主解散');
     expect(getRoomSession(ROOM_ID)).toBeNull();
     expect(events?.closed).toBe(true);
+
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await act(async () => root.render(<Harness />));
+    expect(currentSync().canJoin).toBe(false);
+    expect(currentSync().error).toBe('房间已被房主解散');
   });
 
   it('页面在后台时通知其他成员发送的新内容', async () => {

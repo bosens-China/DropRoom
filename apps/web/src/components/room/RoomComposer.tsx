@@ -1,4 +1,4 @@
-import { Button, Grid, Input, Tooltip, type GetRef } from 'antd';
+import { Button, Grid, Input, Tooltip } from 'antd';
 import {
   FileOutlined,
   PictureOutlined,
@@ -6,8 +6,6 @@ import {
   SendOutlined,
 } from '@ant-design/icons';
 import { useEffect, useRef, type ClipboardEventHandler } from 'react';
-
-type TextAreaRef = GetRef<typeof Input.TextArea>;
 
 interface RoomComposerProps {
   inputText: string;
@@ -38,24 +36,32 @@ export function RoomComposer({
   const canSend = inputText.trim().length > 0;
   const screens = Grid.useBreakpoint();
   const isDesktop = Boolean(screens.md);
-  const inputRef = useRef<TextAreaRef>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const selectComposerText = (event: KeyboardEvent) => {
       const target = event.target;
+      const isSelectAll =
+        event.code === 'KeyA' || event.key.toLowerCase() === 'a';
+      const isEditableTarget =
+        target instanceof Element &&
+        target.closest('input, textarea, select, [contenteditable="true"]') !==
+          null;
       if (
-        event.key.toLowerCase() !== 'a' ||
+        !isSelectAll ||
         (!event.ctrlKey && !event.metaKey) ||
         event.altKey ||
         event.shiftKey ||
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        (target instanceof HTMLElement && target.isContentEditable)
+        isEditableTarget
       ) {
         return;
       }
+
+      const textarea = composerRef.current?.querySelector('textarea');
+      if (!textarea) return;
       event.preventDefault();
-      inputRef.current?.focus({ cursor: 'all' });
+      textarea.focus({ preventScroll: true });
+      textarea.select();
     };
 
     window.addEventListener('keydown', selectComposerText);
@@ -63,7 +69,10 @@ export function RoomComposer({
   }, []);
 
   return (
-    <div className="room-composer w-full flex flex-col px-3 sm:px-4 py-3 dr-chat-bg dr-safe-bottom max-md:shrink-0 md:h-full md:min-h-0">
+    <div
+      ref={composerRef}
+      className="room-composer w-full flex flex-col px-3 sm:px-4 py-3 dr-chat-bg dr-safe-bottom max-md:shrink-0 md:h-full md:min-h-0"
+    >
       {isDragging && (
         <div className="mb-2 shrink-0 rounded-lg border border-dashed border-[var(--dr-primary-border)] bg-[var(--dr-primary-soft)] py-2 text-center text-sm text-[var(--dr-primary)]">
           释放文件开始上传
@@ -73,7 +82,6 @@ export function RoomComposer({
       <div className="room-composer-card dr-surface flex flex-col overflow-hidden rounded-xl border shadow-sm md:min-h-0 md:flex-1">
         <div className="room-composer-input-wrap flex flex-col md:min-h-0 md:flex-1">
           <Input.TextArea
-            ref={inputRef}
             value={inputText}
             onChange={(e) => onInputChange(e.target.value)}
             onPaste={onPasteFiles}

@@ -37,8 +37,9 @@ describe('RoomComposer', () => {
   });
 
   it.each([
-    ['Windows / Linux', { ctrlKey: true }],
-    ['macOS', { metaKey: true }],
+    ['Windows / Linux', { key: 'a', code: 'KeyA', ctrlKey: true }],
+    ['macOS', { key: 'a', code: 'KeyA', metaKey: true }],
+    ['非拉丁键盘布局', { key: 'ф', code: 'KeyA', ctrlKey: true }],
   ])('%s 全选快捷键聚焦并选择发送框内容', async (_system, modifier) => {
     await act(async () => {
       root.render(
@@ -57,17 +58,14 @@ describe('RoomComposer', () => {
       );
     });
 
-    await act(async () => {
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', {
-          key: 'a',
-          cancelable: true,
-          ...modifier,
-        }),
-      );
+    const event = new KeyboardEvent('keydown', {
+      cancelable: true,
+      ...modifier,
     });
+    await act(async () => window.dispatchEvent(event));
 
     const textarea = container.querySelector('textarea');
+    expect(event.defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(textarea);
     expect(textarea?.selectionStart).toBe(0);
     expect(textarea?.selectionEnd).toBe('准备发送的文字'.length);

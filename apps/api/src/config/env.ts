@@ -45,6 +45,7 @@ export const DEFAULT_API_CONFIG = {
   sseHeartbeatMs: 15 * SECOND,
   maxMembersPerRoom: 9,
   maxTextLength: 20_000,
+  longTextFileThreshold: 5_000,
   maxFilesPerBatch: 50,
   maxBatchBytes: 300_000_000,
   maxRoomFileBytes: 1_000_000_000,
@@ -108,6 +109,9 @@ const environmentSchema = z
     DROPROOM_MAX_TEXT_LENGTH: positiveInteger.default(
       DEFAULT_API_CONFIG.maxTextLength,
     ),
+    DROPROOM_LONG_TEXT_FILE_THRESHOLD: positiveInteger.default(
+      DEFAULT_API_CONFIG.longTextFileThreshold,
+    ),
     DROPROOM_MAX_FILES_PER_BATCH: positiveInteger.default(
       DEFAULT_API_CONFIG.maxFilesPerBatch,
     ),
@@ -168,6 +172,17 @@ const environmentSchema = z
     }
 
     if (
+      environment.DROPROOM_LONG_TEXT_FILE_THRESHOLD >
+      environment.DROPROOM_MAX_TEXT_LENGTH
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['DROPROOM_LONG_TEXT_FILE_THRESHOLD'],
+        message: '长文字转文件阈值不能大于单条文字上限',
+      });
+    }
+
+    if (
       environment.DROPROOM_MAX_BATCH_BYTES >
       environment.DROPROOM_MAX_ROOM_FILE_BYTES
     ) {
@@ -209,6 +224,7 @@ export type ApiConfig = {
   sseHeartbeatMs: number;
   maxMembersPerRoom: number;
   maxTextLength: number;
+  longTextFileThreshold: number;
   maxFilesPerBatch: number;
   maxBatchBytes: number;
   maxRoomFileBytes: number;
@@ -244,6 +260,7 @@ export function loadApiConfig(
     sseHeartbeatMs: parsed.DROPROOM_SSE_HEARTBEAT_MS,
     maxMembersPerRoom: parsed.DROPROOM_MAX_MEMBERS_PER_ROOM,
     maxTextLength: parsed.DROPROOM_MAX_TEXT_LENGTH,
+    longTextFileThreshold: parsed.DROPROOM_LONG_TEXT_FILE_THRESHOLD,
     maxFilesPerBatch: parsed.DROPROOM_MAX_FILES_PER_BATCH,
     maxBatchBytes: parsed.DROPROOM_MAX_BATCH_BYTES,
     maxRoomFileBytes: parsed.DROPROOM_MAX_ROOM_FILE_BYTES,

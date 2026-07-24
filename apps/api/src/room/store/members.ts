@@ -23,6 +23,7 @@ export abstract class RoomStoreMembers extends RoomStorePresence {
       items: [],
       files: new Map(),
       subscribers: new Map(),
+      activeDownloads: new Map(),
       usedBytes: 0,
       reservedBytes: 0,
     };

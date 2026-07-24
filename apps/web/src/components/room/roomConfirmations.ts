@@ -1,5 +1,8 @@
 import type { FileItem, RoomSnapshot } from '@droproom/api/domain';
-import { removeJoinedRoom } from '../../utils/roomRegistry';
+import {
+  markRoomUnavailable,
+  removeJoinedRoom,
+} from '../../utils/roomRegistry';
 
 interface ConfirmOptions {
   title: string;
@@ -33,9 +36,14 @@ export function createRoomConfirmations({
   deleteFile,
 }: RoomConfirmationOptions) {
   const exit = () => {
+    const transfersOwnership =
+      room?.ownerMemberId === room?.currentMemberId &&
+      (room?.onlineMemberCount ?? 0) > 1;
     confirm({
       title: '退出这个房间？',
-      content: '房间会从你的列表中移除，但其他成员仍可继续使用。',
+      content: transfersOwnership
+        ? '退出后，房主权限会转交给当前在线且最早加入的成员。'
+        : '房间会从你的列表中移除，但其他成员仍可继续使用。',
       okText: '退出',
       cancelText: '取消',
       onOk: async () => {
@@ -49,12 +57,14 @@ export function createRoomConfirmations({
   const dissolve = () => {
     confirm({
       title: '立即解散房间？',
-      content: '所有文字、文件和房间状态都会被清空，此操作无法撤销。',
+      content:
+        '房间会立即不可访问；若有正在下载的内容，底层文件最多保留30分钟后清理，其他数据立即清除。',
       okText: '解散房间',
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
         if (!(await dissolveRoom())) return;
+        markRoomUnavailable(roomId, '房间已被房主解散');
         removeJoinedRoom(roomId);
         navigateAfterLeave();
       },

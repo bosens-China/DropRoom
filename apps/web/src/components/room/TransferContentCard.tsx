@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Button, Image, Tooltip } from 'antd';
 import type { FileItem, RoomItem, RoomSnapshot } from '@droproom/api/domain';
 import {
@@ -10,6 +10,8 @@ import {
 } from '@ant-design/icons';
 import { fileContentUrl } from '../../api/client';
 import { formatFileSize } from '../../utils/format';
+import { TextFilePreviewModal } from './TextFilePreviewModal';
+import { isTextFile } from './textFile';
 
 interface TransferContentCardProps {
   item: RoomItem;
@@ -31,6 +33,7 @@ export function TransferContentCard({
   onCopyText,
   onDeleteFile,
 }: TransferContentCardProps) {
+  const [textPreviewOpen, setTextPreviewOpen] = useState(false);
   const time = new Date(item.createdAt).toLocaleString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
@@ -38,6 +41,7 @@ export function TransferContentCard({
   const avatarTip = `${item.senderNickname}${isMe ? '（我）' : ''} · #${item.senderNumberId}`;
   const canDelete = item.type === 'file' && (isOwner || item.senderId === myId);
   const isText = item.type === 'text';
+  const textFile = item.type === 'file' && isTextFile(item) ? item : null;
 
   const avatar = (
     <Tooltip title={avatarTip}>
@@ -92,52 +96,72 @@ export function TransferContentCard({
       ) : item.mimeType.startsWith('image/') ? (
         <ImageBlock room={room} file={item} />
       ) : (
-        <FileBlock file={item} />
+        <FileBlock
+          file={item}
+          onPreview={
+            textFile === null ? undefined : () => setTextPreviewOpen(true)
+          }
+        />
       )}
     </div>
   );
 
   return (
-    <article
-      className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
-    >
-      <div
-        className={`flex max-w-[min(100%,32rem)] items-start gap-2.5 ${
-          isMe ? 'flex-row-reverse' : 'flex-row'
-        }`}
+    <>
+      <article
+        className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
       >
-        {avatar}
-
         <div
-          className={`flex min-w-0 flex-col gap-1 ${
-            isMe ? 'items-end' : 'items-start'
+          className={`flex max-w-[min(100%,32rem)] items-start gap-2.5 ${
+            isMe ? 'flex-row-reverse' : 'flex-row'
           }`}
         >
-          <div
-            className={`group flex items-center gap-1 ${
-              isMe ? 'flex-row' : 'flex-row-reverse'
-            }`}
-          >
-            {actions}
-            {bubble}
-          </div>
+          {avatar}
 
-          <time
-            className={`px-0.5 text-[10px] leading-none text-[var(--dr-text-muted)] ${
-              isMe ? 'text-right' : 'text-left'
+          <div
+            className={`flex min-w-0 flex-col gap-1 ${
+              isMe ? 'items-end' : 'items-start'
             }`}
           >
-            {time}
-          </time>
+            <div
+              className={`group flex items-center gap-1 ${
+                isMe ? 'flex-row' : 'flex-row-reverse'
+              }`}
+            >
+              {actions}
+              {bubble}
+            </div>
+
+            <time
+              className={`px-0.5 text-[10px] leading-none text-[var(--dr-text-muted)] ${
+                isMe ? 'text-right' : 'text-left'
+              }`}
+            >
+              {time}
+            </time>
+          </div>
         </div>
-      </div>
-    </article>
+      </article>
+
+      {textFile !== null && (
+        <TextFilePreviewModal
+          open={textPreviewOpen}
+          roomCode={room.code}
+          file={textFile}
+          onClose={() => setTextPreviewOpen(false)}
+          onCopyText={onCopyText}
+        />
+      )}
+    </>
   );
 }
 
-function TextBlock({ content }: { content: string }) {
+export function TextBlock({ content }: { content: string }) {
   return (
-    <p className="text-sm leading-5 whitespace-pre-wrap break-words text-[var(--dr-text)]">
+    <p
+      tabIndex={0}
+      className="dr-scrollbar max-h-64 overflow-y-auto pr-1 text-sm leading-5 whitespace-pre-wrap break-words text-[var(--dr-text)]"
+    >
       {content}
     </p>
   );
@@ -165,26 +189,44 @@ function ImageBlock({ room, file }: { room: RoomSnapshot; file: FileItem }) {
   );
 }
 
-function FileBlock({ file }: { file: FileItem }) {
+function FileBlock({
+  file,
+  onPreview,
+}: {
+  file: FileItem;
+  onPreview?: () => void;
+}) {
   const isVideo = file.mimeType.startsWith('video/');
-
-  return (
-    <div className="flex min-w-[12rem] items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--dr-primary-soft)] text-[var(--dr-primary)]">
+  const content = (
+    <>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--dr-primary-soft)] text-[var(--dr-primary)]">
         {isVideo ? <PlaySquareOutlined /> : <FileOutlined />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p
-          className="truncate text-sm font-medium leading-5 text-[var(--dr-text)]"
+      </span>
+      <span className="min-w-0 flex-1">
+        <span
+          className="block truncate text-sm font-medium leading-5 text-[var(--dr-text)]"
           title={file.name}
         >
           {file.name}
-        </p>
-        <p className="text-[11px] leading-4 text-[var(--dr-text-muted)]">
+        </span>
+        <span className="block text-[11px] leading-4 text-[var(--dr-text-muted)]">
           {formatFileSize(file.size)}
-        </p>
-      </div>
-    </div>
+        </span>
+      </span>
+    </>
+  );
+
+  return onPreview ? (
+    <button
+      type="button"
+      onClick={onPreview}
+      title="点击预览文本"
+      className="flex min-w-[12rem] cursor-pointer items-center gap-3 text-left"
+    >
+      {content}
+    </button>
+  ) : (
+    <div className="flex min-w-[12rem] items-center gap-3">{content}</div>
   );
 }
 

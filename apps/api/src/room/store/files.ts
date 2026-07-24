@@ -1,7 +1,7 @@
 import { rm, stat } from 'node:fs/promises';
 import type { FileItem } from '../domain.js';
 import { ApiError } from '../../shared/errors.js';
-import type { DownloadFile } from './core.js';
+import type { ActiveDownload, DownloadFile } from './core.js';
 import { RoomStoreUploads } from './uploads.js';
 
 export abstract class RoomStoreFiles extends RoomStoreUploads {
@@ -68,8 +68,46 @@ export abstract class RoomStoreFiles extends RoomStoreUploads {
     };
   }
 
+  async beginDownload(
+    code: string,
+    fileId: string,
+    token: string,
+  ): Promise<ActiveDownload> {
+    const download = await this.getDownload(code, fileId, token);
+    const { room } = this.requireMember(code, token);
+    const file = this.requireFile(room, fileId);
+    if (file.status !== 'ready' || file.storedPath !== download.path) {
+      throw new ApiError(404, 'FILE_NOT_AVAILABLE', '文件不可下载');
+    }
+
+    room.activeDownloads.set(
+      fileId,
+      (room.activeDownloads.get(fileId) ?? 0) + 1,
+    );
+    let active = true;
+    return {
+      ...download,
+      complete: () => {
+        if (!active) return;
+        active = false;
+        const remaining = (room.activeDownloads.get(fileId) ?? 1) - 1;
+        if (remaining > 0) {
+          room.activeDownloads.set(fileId, remaining);
+        } else {
+          room.activeDownloads.delete(fileId);
+        }
+      },
+    };
+  }
+
   async runMaintenance(): Promise<void> {
     const currentTime = this.now();
+
+    for (const [code, retained] of [...this.retainedStorage]) {
+      if (currentTime >= retained.deleteAt) {
+        await this.removeRoomStorage(code);
+      }
+    }
 
     for (const room of [...this.rooms.values()]) {
       if (currentTime >= room.expiresAt) {

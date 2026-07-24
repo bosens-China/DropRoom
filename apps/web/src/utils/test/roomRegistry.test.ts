@@ -4,6 +4,8 @@ import {
   getJoinedRoomIds,
   getJoinedRoomSummaries,
   getNextRoomIdAfterLeave,
+  isRoomUnavailable,
+  markRoomUnavailable,
   removeJoinedRoom,
   saveRoomCredentials,
   touchJoinedRoom,
@@ -26,6 +28,7 @@ function makeRoom(
     reservedBytes: 0,
     maxFileBytes: 2_000_000_000,
     maxTextLength: 20_000,
+    longTextFileThreshold: 5_000,
     maxFilesPerBatch: 50,
     maxBatchBytes: 500_000_000,
     items: [],
@@ -44,6 +47,7 @@ function saveRoom(code: string, expiresAt?: number): RoomCredentials {
 describe('roomRegistry', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('只保存房间快照，不把成员凭证写入本地存储', () => {
@@ -96,5 +100,13 @@ describe('roomRegistry', () => {
     saveRoom('12345678', Date.now() - 1);
 
     expect(getJoinedRoomSummaries()).toHaveLength(0);
+  });
+
+  it('刷新期间保留房间已销毁状态，成功加入后清除', () => {
+    markRoomUnavailable('12345678');
+    expect(isRoomUnavailable('12345678')).toBe(true);
+
+    saveRoom('12345678');
+    expect(isRoomUnavailable('12345678')).toBe(false);
   });
 });

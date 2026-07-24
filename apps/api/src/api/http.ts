@@ -126,13 +126,15 @@ export function safeContentDisposition(
 }
 
 export function canPreviewInline(mimeType: string): boolean {
+  const normalizedMimeType = mimeType.split(';', 1)[0]?.trim().toLowerCase();
   return [
     'image/png',
     'image/jpeg',
     'image/gif',
     'image/webp',
     'image/avif',
-  ].includes(mimeType.toLowerCase());
+    'text/plain',
+  ].includes(normalizedMimeType ?? '');
 }
 
 export function requestDuration(context: Context<AppEnv>): number {

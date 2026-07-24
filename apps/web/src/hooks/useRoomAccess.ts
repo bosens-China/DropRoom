@@ -14,7 +14,7 @@ interface UseRoomAccessOptions {
   onJoined: (room: RoomSnapshot) => void;
 }
 
-/** 统一首页与房间侧栏的创建、加入和服务端限流交互 */
+/** 首页创建、加入与服务端限流交互 */
 export function useRoomAccess({
   notify,
   onCreated,

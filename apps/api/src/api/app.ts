@@ -337,9 +337,11 @@ export function createApp(
       const { code, fileId } = context.req.valid('param');
       const { mode } = context.req.valid('query');
       const token = memberTokenFromRequest(context, code);
-      const file = await store.getDownload(code, fileId, token);
+      const file = await store.beginDownload(code, fileId, token);
       const inline = mode === 'inline' && canPreviewInline(file.mimeType);
       const nodeStream = createReadStream(file.path);
+      nodeStream.once('close', file.complete);
+      nodeStream.once('error', file.complete);
       context.req.raw.signal.addEventListener('abort', () => {
         nodeStream.destroy();
       });

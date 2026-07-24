@@ -12,6 +12,7 @@ describe('API 环境配置', () => {
     expect(config.openApiEnabled).toBe(true);
     expect(config.swaggerPath).toBe('/docs');
     expect(config.maxMembersPerRoom).toBe(9);
+    expect(config.longTextFileThreshold).toBe(5_000);
     expect(config.maxFilesPerBatch).toBe(50);
     expect(config.maxBatchBytes).toBe(300_000_000);
     expect(config.maxRoomFileBytes).toBe(1_000_000_000);
@@ -67,6 +68,7 @@ describe('API 环境配置', () => {
   it('允许覆盖上传与房间容量限制', () => {
     const config = loadApiConfig({
       DROPROOM_MAX_TEXT_LENGTH: '10000',
+      DROPROOM_LONG_TEXT_FILE_THRESHOLD: '3000',
       DROPROOM_MAX_FILES_PER_BATCH: '20',
       DROPROOM_MAX_BATCH_BYTES: '100000000',
       DROPROOM_MAX_ROOM_FILE_BYTES: '500000000',
@@ -74,6 +76,7 @@ describe('API 环境配置', () => {
     });
 
     expect(config.maxTextLength).toBe(10_000);
+    expect(config.longTextFileThreshold).toBe(3_000);
     expect(config.maxFilesPerBatch).toBe(20);
     expect(config.maxBatchBytes).toBe(100_000_000);
     expect(config.maxRoomFileBytes).toBe(500_000_000);
@@ -81,6 +84,12 @@ describe('API 环境配置', () => {
   });
 
   it('拒绝不一致的容量层级', () => {
+    expect(() =>
+      loadApiConfig({
+        DROPROOM_MAX_TEXT_LENGTH: '1000',
+        DROPROOM_LONG_TEXT_FILE_THRESHOLD: '1001',
+      }),
+    ).toThrow();
     expect(() =>
       loadApiConfig({
         DROPROOM_MAX_BATCH_BYTES: '2000',

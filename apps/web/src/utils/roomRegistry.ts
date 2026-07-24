@@ -2,6 +2,8 @@ import type { RoomCredentials, RoomSnapshot } from '@droproom/api/domain';
 
 const JOINED_ROOMS_KEY = 'droproom-joined-rooms';
 const ROOMS_CHANGED_EVENT = 'droproom-rooms-changed';
+const unavailableRoomKey = (roomId: string) =>
+  `droproom-unavailable-room-${roomId}`;
 
 export interface JoinedRoomEntry {
   roomId: string;
@@ -78,6 +80,7 @@ function writeEntries(entries: JoinedRoomEntry[]): void {
 }
 
 export function saveRoomCredentials(credentials: RoomCredentials): void {
+  sessionStorage.removeItem(unavailableRoomKey(credentials.room.code));
   const entries = readEntries();
   const now = Date.now();
   const existing = entries.find(
@@ -120,6 +123,23 @@ export function getJoinedRoomIds(): string[] {
 
 export function removeJoinedRoom(roomId: string): void {
   writeEntries(readEntries().filter((entry) => entry.roomId !== roomId));
+}
+
+export function markRoomUnavailable(
+  roomId: string,
+  message = '房间不存在或已销毁',
+): void {
+  sessionStorage.setItem(unavailableRoomKey(roomId), message);
+}
+
+export function getRoomUnavailableMessage(roomId: string): string | null {
+  const message = sessionStorage.getItem(unavailableRoomKey(roomId));
+  if (message === 'true') return '房间不存在或已销毁';
+  return message;
+}
+
+export function isRoomUnavailable(roomId: string): boolean {
+  return getRoomUnavailableMessage(roomId) !== null;
 }
 
 export function touchJoinedRoom(roomId: string): void {

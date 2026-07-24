@@ -9,19 +9,23 @@ import { Drawer, Modal, message } from 'antd';
 import { LoadingOutlined, MenuFoldOutlined } from '@ant-design/icons';
 import { useRoomSync } from '../hooks/useRoomSync';
 import { useJoinedRooms } from '../hooks/useJoinedRooms';
-import { useRoomAccess } from '../hooks/useRoomAccess';
 import { useRoomUploads } from '../hooks/useRoomUploads';
-import { removeJoinedRoom, touchJoinedRoom } from '../utils/roomRegistry';
+import {
+  markRoomUnavailable,
+  removeJoinedRoom,
+  touchJoinedRoom,
+} from '../utils/roomRegistry';
 import { RoomMemberPanel } from '../components/room/RoomMemberPanel';
 import { RoomHeader } from '../components/room/RoomHeader';
 import { RoomTimeline } from '../components/room/RoomTimeline';
 import { RoomComposer } from '../components/room/RoomComposer';
-import { JoinRoomModal } from '../components/room/JoinRoomModal';
 import { RoomEditModals } from '../components/room/RoomEditModals';
 import { RoomAccessError } from '../components/room/RoomAccessError';
 import { RoomResizableLayout } from '../components/room/RoomResizableLayout';
 import { createRoomConfirmations } from '../components/room/roomConfirmations';
 import { formatDuration } from '../utils/format';
+import { errorMessage } from '../api/client';
+import { joinRoomByCode } from '../utils/roomActions';
 
 export const Route = createFileRoute('/room/$roomId')({
   component: RoomComponent,
@@ -60,6 +64,8 @@ function RoomComponent() {
   const [nicknameInput, setNicknameInput] = useState('');
   const [timeLeft, setTimeLeft] = useState(24 * 60 * 60);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
+  const [joiningRoom, setJoiningRoom] = useState(false);
+  const [isSendingTextFile, setIsSendingTextFile] = useState(false);
 
   useEffect(() => {
     if (room) touchJoinedRoom(roomId);
@@ -77,23 +83,19 @@ function RoomComponent() {
     navigate({ to: '/' });
   }, [navigate, refresh]);
 
-  const roomAccess = useRoomAccess({
-    notify: messageApi,
-    onCreated: (nextRoom) => {
+  const joinCurrentRoom = async () => {
+    if (joiningRoom) return;
+    setJoiningRoom(true);
+    try {
+      const nextRoom = await joinRoomByCode(roomId);
       refresh();
-      navigate({
-        to: '/room/$roomId',
-        params: { roomId: nextRoom.code },
-      });
-    },
-    onJoined: (nextRoom) => {
-      refresh();
-      navigate({
-        to: '/room/$roomId',
-        params: { roomId: nextRoom.code },
-      });
-    },
-  });
+      messageApi.success(`已加入房间：${nextRoom.name}`);
+    } catch (error: unknown) {
+      messageApi.error(errorMessage(error));
+    } finally {
+      setJoiningRoom(false);
+    }
+  };
 
   useEffect(() => {
     if (!room) return;
@@ -105,6 +107,7 @@ function RoomComponent() {
       );
       setTimeLeft(diff);
       if (diff <= 0) {
+        markRoomUnavailable(roomId, '房间已到期并销毁');
         removeJoinedRoom(roomId);
         messageApi.error('房间已到期并销毁');
         navigateAfterLeave();
@@ -124,6 +127,7 @@ function RoomComponent() {
     handleFileChange,
     handleDrop,
     handlePaste,
+    submitTextFile,
     handleDragOver,
     handleDragLeave,
     selectFile,
@@ -153,8 +157,8 @@ function RoomComponent() {
         <RoomAccessError
           message={syncError}
           canJoin={canJoin}
-          joining={roomAccess.joining}
-          onJoin={() => void roomAccess.join(roomId)}
+          joining={joiningRoom}
+          onJoin={() => void joinCurrentRoom()}
           onBack={navigateAfterLeave}
         />
       </>
@@ -169,9 +173,22 @@ function RoomComponent() {
   }
   const handleSendText = async () => {
     const trimmed = inputText.trim();
-    if (!trimmed) return;
+    if (!trimmed || isSendingTextFile) return;
     if (trimmed.length > room.maxTextLength) {
       messageApi.error(`文字最多 ${room.maxTextLength.toLocaleString()} 字`);
+      return;
+    }
+    if (trimmed.length > room.longTextFileThreshold) {
+      setIsSendingTextFile(true);
+      try {
+        if (await submitTextFile(trimmed)) {
+          setInputText((current) =>
+            current.trim() === trimmed ? '' : current,
+          );
+        }
+      } finally {
+        setIsSendingTextFile(false);
+      }
       return;
     }
     if (await sendMessage(trimmed)) {
@@ -263,7 +280,7 @@ function RoomComponent() {
             inputText={inputText}
             maxTextLength={room.maxTextLength}
             isDragging={isDragging}
-            isSending={isSendingMessage}
+            isSending={isSendingMessage || isSendingTextFile}
             onInputChange={setInputText}
             onSend={handleSendText}
             onImageSelect={selectImage}
@@ -289,14 +306,6 @@ function RoomComponent() {
       >
         {memberPanel}
       </Drawer>
-
-      <JoinRoomModal
-        open={roomAccess.joinOpen}
-        loading={roomAccess.joining}
-        lockoutTime={roomAccess.lockoutTime}
-        onJoin={roomAccess.join}
-        onCancel={roomAccess.closeJoin}
-      />
 
       <input
         type="file"

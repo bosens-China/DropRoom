@@ -49,6 +49,7 @@ export type Room = {
   items: RoomItem[];
   files: Map<string, StoredFile>;
   subscribers: Map<string, Subscriber>;
+  activeDownloads: Map<string, number>;
   usedBytes: number;
   reservedBytes: number;
 };
@@ -66,6 +67,17 @@ export type DownloadFile = {
   size: number;
   mimeType: string;
 };
+
+export type ActiveDownload = DownloadFile & {
+  complete: () => void;
+};
+
+export type RetainedStorage = {
+  deleteAt: number;
+  bytes: number;
+};
+
+export const DISSOLVED_DOWNLOAD_RETENTION_MS = 30 * 60 * 1_000;
 
 export type Subscription = {
   snapshot: RoomSnapshot;
@@ -122,6 +134,7 @@ export abstract class RoomStoreCore {
   readonly config: ApiConfig;
   protected readonly now: Clock;
   protected readonly rooms = new Map<string, Room>();
+  protected readonly retainedStorage = new Map<string, RetainedStorage>();
   private maintenanceTimer?: NodeJS.Timeout;
   private maintenanceRunning = false;
 
@@ -142,6 +155,7 @@ export abstract class RoomStoreCore {
         }),
       ),
     );
+    this.retainedStorage.clear();
   }
 
   startMaintenance(): void {
@@ -176,6 +190,11 @@ export abstract class RoomStoreCore {
     await Promise.all(
       [...this.rooms.keys()].map((code) => this.destroyRoom(code, 'shutdown')),
     );
+    await Promise.all(
+      [...this.retainedStorage.keys()].map((code) =>
+        this.removeRoomStorage(code),
+      ),
+    );
   }
 
   abstract runMaintenance(): Promise<void>;
@@ -204,7 +223,7 @@ export abstract class RoomStoreCore {
   protected generateRoomCode(): string {
     for (let attempt = 0; attempt < 100; attempt += 1) {
       const code = randomInt(0, 100_000_000).toString().padStart(8, '0');
-      if (!this.rooms.has(code)) {
+      if (!this.rooms.has(code) && !this.retainedStorage.has(code)) {
         return code;
       }
     }
@@ -218,6 +237,17 @@ export abstract class RoomStoreCore {
       ROOM_ADJECTIVES[0];
     const noun = ROOM_NOUNS[randomInt(0, ROOM_NOUNS.length)] ?? ROOM_NOUNS[0];
     return `${adjective}${noun}`;
+  }
+
+  protected async removeRoomStorage(code: string): Promise<void> {
+    if (!this.retainedStorage.has(code)) {
+      this.retainedStorage.set(code, { deleteAt: this.now(), bytes: 0 });
+    }
+    await rm(join(this.config.storageRoot, code), {
+      recursive: true,
+      force: true,
+    });
+    this.retainedStorage.delete(code);
   }
 
   protected requireRoom(code: string): Room {

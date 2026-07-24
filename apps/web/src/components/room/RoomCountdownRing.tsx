@@ -9,6 +9,8 @@ interface RoomCountdownRingProps {
 
 /** 房间存续倒计时：进度轨道随时间缩短 */
 export function RoomCountdownRing({ room, timeLeft }: RoomCountdownRingProps) {
+  const formattedTime = formatDurationCompact(timeLeft);
+  const showText = timeLeft < 2 * 60 * 60;
   const totalSeconds = Math.max(
     1,
     Math.floor(
@@ -25,10 +27,10 @@ export function RoomCountdownRing({ room, timeLeft }: RoomCountdownRingProps) {
         : 'var(--dr-primary)';
 
   return (
-    <Tooltip title={`房间剩余 ${formatDurationCompact(timeLeft)}`}>
+    <Tooltip title={`房间剩余 ${formattedTime}`}>
       <div
         className="flex shrink-0 items-center gap-2"
-        aria-label={`房间剩余 ${formatDurationCompact(timeLeft)}`}
+        aria-label={`房间剩余 ${formattedTime}`}
       >
         <div className="hidden w-12 lg:block">
           <Progress
@@ -40,10 +42,11 @@ export function RoomCountdownRing({ room, timeLeft }: RoomCountdownRingProps) {
           />
         </div>
         <span
-          className="min-w-[2.75rem] whitespace-nowrap text-right font-mono text-[11px] font-medium"
+          className={`w-[2.75rem] whitespace-nowrap text-right font-mono text-[11px] font-medium ${showText ? 'visible' : 'invisible'}`}
           style={{ color: strokeColor }}
+          aria-hidden={!showText}
         >
-          {formatDurationCompact(timeLeft)}
+          {formattedTime}
         </span>
       </div>
     </Tooltip>

@@ -16,6 +16,9 @@ import {
 } from '../api/client';
 import {
   getRoomSession,
+  getRoomUnavailableMessage,
+  isRoomUnavailable,
+  markRoomUnavailable,
   removeJoinedRoom,
   subscribeJoinedRooms,
   updateRoomSnapshot,
@@ -106,16 +109,21 @@ function showBrowserNotification(
 
 export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
   const session = getRoomSession(roomId);
+  const unavailableMessage = getRoomUnavailableMessage(roomId);
   const sessionKey = useSyncExternalStore(
     subscribeJoinedRooms,
     () => getRoomSession(roomId)?.joinedAt ?? 0,
   );
   const [room, setRoom] = useState<RoomSnapshot | null>(session?.room ?? null);
   const [error, setError] = useState<string | null>(
-    session ? null : '缺少当前房间的成员凭证，请重新加入',
+    session
+      ? null
+      : unavailableMessage
+        ? unavailableMessage
+        : '缺少当前房间的成员凭证，请重新加入',
   );
   const [unavailableRoomId, setUnavailableRoomId] = useState<string | null>(
-    null,
+    unavailableMessage ? roomId : null,
   );
 
   const commitRoom = (nextRoom: RoomSnapshot | null) => {
@@ -127,7 +135,10 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
     const currentSession = getRoomSession(roomId);
     if (!currentSession) {
       setRoom(null);
-      if (unavailableRoomId !== roomId) {
+      const persistedError = getRoomUnavailableMessage(roomId);
+      if (persistedError || unavailableRoomId === roomId) {
+        setError(persistedError ?? '房间不存在或已销毁');
+      } else {
         setError('缺少当前房间的成员凭证，请重新加入');
       }
       return;
@@ -155,10 +166,15 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
           if (!payload) return;
 
           if (payload.type === 'room.destroyed') {
+            const destroyedMessage =
+              payload.reason === 'dissolved'
+                ? '房间已被房主解散'
+                : '房间已销毁';
+            markRoomUnavailable(roomId, destroyedMessage);
             setUnavailableRoomId(roomId);
             removeJoinedRoom(roomId);
             setRoom(null);
-            setError('房间已销毁');
+            setError(destroyedMessage);
             return;
           }
           showBrowserNotification(
@@ -195,6 +211,7 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
           requestError instanceof ApiRequestError &&
           (requestError.status === 401 || requestError.status === 404)
         ) {
+          if (requestError.status === 404) markRoomUnavailable(roomId);
           setUnavailableRoomId(requestError.status === 404 ? roomId : null);
           removeJoinedRoom(roomId);
           setRoom(null);
@@ -219,7 +236,10 @@ export function useRoomSync(roomId: string, notify: RoomSyncNotifier) {
     room,
     onlineMembers: room?.members ?? [],
     error,
-    canJoin: getRoomSession(roomId) === null && unavailableRoomId !== roomId,
+    canJoin:
+      getRoomSession(roomId) === null &&
+      unavailableRoomId !== roomId &&
+      !isRoomUnavailable(roomId),
     myId: room?.currentMemberId ?? '',
     ...actions,
   };

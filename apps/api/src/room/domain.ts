@@ -136,6 +136,7 @@ export const roomSnapshotSchema = z
     reservedBytes: z.number().int().nonnegative(),
     maxFileBytes: z.number().int().positive(),
     maxTextLength: z.number().int().positive(),
+    longTextFileThreshold: z.number().int().positive(),
     maxFilesPerBatch: z.number().int().positive(),
     maxBatchBytes: z.number().int().positive(),
     items: z.array(roomItemSchema),

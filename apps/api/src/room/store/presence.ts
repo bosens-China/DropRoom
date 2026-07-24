@@ -1,5 +1,4 @@
 import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
 import type {
   FileItem,
   MemberView,
@@ -8,7 +7,12 @@ import type {
   RoomEventPayload,
   RoomSnapshot,
 } from '../domain.js';
-import { RoomStoreCore, type Room, type StoredFile } from './core.js';
+import {
+  DISSOLVED_DOWNLOAD_RETENTION_MS,
+  RoomStoreCore,
+  type Room,
+  type StoredFile,
+} from './core.js';
 
 export abstract class RoomStorePresence extends RoomStoreCore {
   protected disconnectSubscriber(
@@ -106,6 +110,7 @@ export abstract class RoomStorePresence extends RoomStoreCore {
       reservedBytes: room.reservedBytes,
       maxFileBytes: this.config.maxRoomFileBytes,
       maxTextLength: this.config.maxTextLength,
+      longTextFileThreshold: this.config.longTextFileThreshold,
       maxFilesPerBatch: this.config.maxFilesPerBatch,
       maxBatchBytes: this.config.maxBatchBytes,
       items: room.items.map((item) =>
@@ -213,6 +218,9 @@ export abstract class RoomStorePresence extends RoomStoreCore {
     for (const room of this.rooms.values()) {
       total += room.usedBytes + room.reservedBytes;
     }
+    for (const retained of this.retainedStorage.values()) {
+      total += retained.bytes;
+    }
     return total;
   }
 
@@ -231,9 +239,32 @@ export abstract class RoomStorePresence extends RoomStoreCore {
     }
     room.subscribers.clear();
     this.rooms.delete(code);
-    await rm(join(this.config.storageRoot, code), {
-      recursive: true,
-      force: true,
+
+    const retainedFileIds =
+      reason === 'dissolved'
+        ? new Set(room.activeDownloads.keys())
+        : new Set<string>();
+    if (retainedFileIds.size === 0) {
+      await this.removeRoomStorage(code);
+      return;
+    }
+
+    let retainedBytes = 0;
+    const removals: Promise<void>[] = [];
+    for (const file of room.files.values()) {
+      if (file.storedPath !== undefined && retainedFileIds.has(file.id)) {
+        retainedBytes += file.size;
+      } else if (file.storedPath !== undefined) {
+        removals.push(rm(file.storedPath, { force: true }));
+      }
+      if (file.partialPath !== undefined) {
+        removals.push(rm(file.partialPath, { force: true }));
+      }
+    }
+    this.retainedStorage.set(code, {
+      deleteAt: this.now() + DISSOLVED_DOWNLOAD_RETENTION_MS,
+      bytes: retainedBytes,
     });
+    await Promise.all(removals);
   }
 }

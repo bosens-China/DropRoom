@@ -1,4 +1,4 @@
-import type { FileItem, RoomItem, RoomSnapshot } from '@droproom/api/domain';
+import type { FileItem, RoomSnapshot } from '@droproom/api/domain';
 import { useEffect, useRef } from 'react';
 import { Button, Progress } from 'antd';
 import {
@@ -12,6 +12,7 @@ import {
 import { TransferContentCard } from './TransferContentCard';
 import { formatFileSize } from '../../utils/format';
 import type { UploadViewState } from '../../utils/fileUpload';
+import { chronologicalTimeline } from './timelineOrder';
 
 interface RoomTimelineProps {
   room: RoomSnapshot;
@@ -21,14 +22,6 @@ interface RoomTimelineProps {
   onRetryFile: (fileId: string) => void;
   canRetryFile: (fileId: string) => boolean;
   uploadStateForFile: (fileId: string) => UploadViewState | undefined;
-}
-
-function visibleTimeline(items: RoomItem[]): RoomItem[] {
-  return items
-    .filter((item) => item.type === 'text' || item.status === 'ready')
-    .sort(
-      (left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt),
-    );
 }
 
 /** 文件传输助手风格内容时间线 */
@@ -42,17 +35,14 @@ export function RoomTimeline({
   uploadStateForFile,
 }: RoomTimelineProps) {
   const endRef = useRef<HTMLDivElement>(null);
-  const timeline = visibleTimeline(room.items);
-  const pendingFiles = room.items.filter(
-    (item): item is FileItem => item.type === 'file' && item.status !== 'ready',
-  );
+  const timeline = chronologicalTimeline(room.items);
   const isOwner = room.ownerMemberId === myId;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [timeline.length, pendingFiles.length]);
+  }, [timeline.length]);
 
-  if (timeline.length === 0 && pendingFiles.length === 0) {
+  if (timeline.length === 0) {
     return (
       <div className="room-timeline-scroll flex min-h-0 flex-1 flex-col items-center justify-center py-12 text-center dr-chat-bg">
         <div className="w-16 h-16 rounded-2xl dr-surface border shadow-sm flex items-center justify-center mb-4">
@@ -71,31 +61,31 @@ export function RoomTimeline({
   return (
     <div className="room-timeline-scroll dr-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden py-4 dr-chat-bg">
       <div className="space-y-5 px-4">
-        {timeline.map((item) => (
-          <TransferContentCard
-            key={item.id}
-            item={item}
-            room={room}
-            myId={myId}
-            isMe={item.senderId === myId}
-            isOwner={isOwner}
-            onCopyText={onCopyText}
-            onDeleteFile={onDeleteFile}
-          />
-        ))}
-
-        {pendingFiles.map((file) => (
-          <PendingFileCard
-            key={file.id}
-            file={file}
-            isOwner={isOwner}
-            myId={myId}
-            uploadState={uploadStateForFile(file.id)}
-            canRetry={canRetryFile(file.id)}
-            onRetry={onRetryFile}
-            onDelete={onDeleteFile}
-          />
-        ))}
+        {timeline.map((item) =>
+          item.type === 'file' && item.status !== 'ready' ? (
+            <PendingFileCard
+              key={item.id}
+              file={item}
+              isOwner={isOwner}
+              myId={myId}
+              uploadState={uploadStateForFile(item.id)}
+              canRetry={canRetryFile(item.id)}
+              onRetry={onRetryFile}
+              onDelete={onDeleteFile}
+            />
+          ) : (
+            <TransferContentCard
+              key={item.id}
+              item={item}
+              room={room}
+              myId={myId}
+              isMe={item.senderId === myId}
+              isOwner={isOwner}
+              onCopyText={onCopyText}
+              onDeleteFile={onDeleteFile}
+            />
+          ),
+        )}
       </div>
       <div ref={endRef} />
     </div>

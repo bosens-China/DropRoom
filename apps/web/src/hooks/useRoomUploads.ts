@@ -19,6 +19,8 @@ interface UseRoomUploadsOptions {
   uploadFiles: (files: File[]) => Promise<boolean>;
 }
 
+const UNTITLED_TEXT_FILE_PATTERN = /^无标题文件(\d+)\.txt$/;
+
 /** 文件选择、粘贴、拖放和批次前置校验 */
 export function useRoomUploads({
   room,
@@ -29,17 +31,18 @@ export function useRoomUploads({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const nextUntitledTextFileNumberRef = useRef(1);
 
-  const submitFiles = (files: File[]) => {
-    if (!room || !files.length) return;
+  const submitFiles = async (files: File[]) => {
+    if (!room || !files.length) return false;
     const supportedFiles = files.filter((file) => file.size > 0);
     if (supportedFiles.length !== files.length) {
       notify.error('暂不支持上传空文件');
     }
-    if (!supportedFiles.length) return;
+    if (!supportedFiles.length) return false;
     if (supportedFiles.length > room.maxFilesPerBatch) {
       notify.error(`单次最多选择 ${room.maxFilesPerBatch} 个文件`);
-      return;
+      return false;
     }
 
     const batchSize = supportedFiles.reduce(
@@ -50,7 +53,7 @@ export function useRoomUploads({
       notify.error(
         `单批文件总大小不能超过 ${formatFileSize(room.maxBatchBytes)}`,
       );
-      return;
+      return false;
     }
 
     const availableSize = Math.max(
@@ -61,28 +64,54 @@ export function useRoomUploads({
       notify.error(
         `房间剩余容量仅 ${formatFileSize(availableSize)}，本批需要 ${formatFileSize(batchSize)}`,
       );
-      return;
+      return false;
     }
 
-    void uploadFiles(supportedFiles);
+    return uploadFiles(supportedFiles);
+  };
+
+  const nextUntitledTextFileNumber = () => {
+    const largestExistingNumber =
+      room?.items.reduce((largest, item) => {
+        if (item.type !== 'file') return largest;
+        const match = UNTITLED_TEXT_FILE_PATTERN.exec(item.name);
+        return match ? Math.max(largest, Number(match[1])) : largest;
+      }, 0) ?? 0;
+    return Math.max(
+      nextUntitledTextFileNumberRef.current,
+      largestExistingNumber + 1,
+    );
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    submitFiles(Array.from(event.target.files ?? []));
+    void submitFiles(Array.from(event.target.files ?? []));
     event.target.value = '';
   };
 
   const handleDrop = (event: DragEvent) => {
     event.preventDefault();
     setIsDragging(false);
-    submitFiles(Array.from(event.dataTransfer.files));
+    void submitFiles(Array.from(event.dataTransfer.files));
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const files = Array.from(event.clipboardData.files);
-    if (!files.length) return;
-    event.preventDefault();
-    submitFiles(files);
+    if (files.length) {
+      event.preventDefault();
+      void submitFiles(files);
+    }
+  };
+
+  const submitTextFile = async (text: string) => {
+    const fileNumber = nextUntitledTextFileNumber();
+    const file = new File([text], `无标题文件${fileNumber}.txt`, {
+      type: 'text/plain',
+    });
+    if (await submitFiles([file])) {
+      nextUntitledTextFileNumberRef.current = fileNumber + 1;
+      return true;
+    }
+    return false;
   };
 
   const openPicker = (inputRef: RefObject<HTMLInputElement | null>) => {
@@ -97,6 +126,7 @@ export function useRoomUploads({
     handleFileChange,
     handleDrop,
     handlePaste,
+    submitTextFile,
     handleDragOver: (event: DragEvent) => {
       event.preventDefault();
       setIsDragging(true);
