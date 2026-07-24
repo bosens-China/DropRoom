@@ -10,7 +10,6 @@ interface RoomCountdownRingProps {
 /** 房间存续倒计时：进度轨道随时间缩短 */
 export function RoomCountdownRing({ room, timeLeft }: RoomCountdownRingProps) {
   const formattedTime = formatDurationCompact(timeLeft);
-  const showText = timeLeft < 2 * 60 * 60;
   const totalSeconds = Math.max(
     1,
     Math.floor(
@@ -42,9 +41,8 @@ export function RoomCountdownRing({ room, timeLeft }: RoomCountdownRingProps) {
           />
         </div>
         <span
-          className={`w-[2.75rem] whitespace-nowrap text-right font-mono text-[11px] font-medium ${showText ? 'visible' : 'invisible'}`}
+          className="w-[2.75rem] whitespace-nowrap text-right font-mono text-[11px] font-medium"
           style={{ color: strokeColor }}
-          aria-hidden={!showText}
         >
           {formattedTime}
         </span>

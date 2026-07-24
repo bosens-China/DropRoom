@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { RoomSnapshot } from '@droproom/api/domain';
 import { message } from 'antd';
 import {
+  GithubOutlined,
   LoginOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
@@ -83,9 +84,20 @@ function HomeComponent() {
         </div>
       </main>
 
-      <p className="shrink-0 text-center text-[11px] text-[var(--dr-text-muted)] pb-6 px-5 dr-safe-bottom dr-safe-inline">
-        连续 5 分钟无人在线或达到 24 小时上限后，房间会自动销毁
-      </p>
+      <div className="shrink-0 text-center text-[11px] text-[var(--dr-text-muted)] pb-6 px-5 dr-safe-bottom dr-safe-inline space-y-1.5">
+        <p>连续 5 分钟无人在线或达到 24 小时上限后，房间会自动销毁</p>
+        <p>
+          <a
+            href="https://github.com/bosens-China/DropRoom"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[var(--dr-text-muted)] hover:text-[var(--dr-primary)] transition-colors"
+          >
+            <GithubOutlined />
+            <span>GitHub 源码</span>
+          </a>
+        </p>
+      </div>
 
       <JoinRoomModal
         open={roomAccess.joinOpen}

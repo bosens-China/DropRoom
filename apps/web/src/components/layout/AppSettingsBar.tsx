@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { message } from 'antd';
-import { SettingOutlined } from '@ant-design/icons';
+import { GithubOutlined, SettingOutlined } from '@ant-design/icons';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import {
   getBrowserNotificationsEnabled,
@@ -95,7 +95,9 @@ export function AppSettingsBar({
       {contextHolder}
       <div
         className={
-          isEmbedded ? 'shrink-0 border-t dr-surface' : 'flex items-center'
+          isEmbedded
+            ? 'shrink-0 border-t dr-surface flex items-center pr-2'
+            : 'flex items-center'
         }
       >
         <button
@@ -104,7 +106,7 @@ export function AppSettingsBar({
           aria-label="打开设置"
           className={`flex items-center gap-2 border-none bg-transparent cursor-pointer transition-colors ${
             isEmbedded
-              ? 'w-full px-3 py-2.5 hover:opacity-80'
+              ? 'flex-1 px-3 py-2.5 hover:opacity-80'
               : 'px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5'
           }`}
         >
@@ -128,6 +130,18 @@ export function AppSettingsBar({
             className={`text-[var(--dr-text-muted)] shrink-0 ${isEmbedded ? 'text-base' : 'text-sm'}`}
           />
         </button>
+        {isEmbedded && (
+          <a
+            href="https://github.com/bosens-China/DropRoom"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="GitHub 源码"
+            aria-label="GitHub 源码"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--dr-text-muted)] hover:text-[var(--dr-text)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0"
+          >
+            <GithubOutlined className="text-base" />
+          </a>
+        )}
       </div>
 
       <SettingsModal

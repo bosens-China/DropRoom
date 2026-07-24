@@ -38,15 +38,21 @@ export function RoomMemberPanel({
     <div className="flex flex-col h-full w-full dr-sidebar border-r">
       {/* 品牌 Logo */}
       <div className="shrink-0 px-4 py-3.5 border-b border-[var(--dr-border)]">
-        <DropRoomLogo size="sm" onClick={onExit} />
+        <Tooltip title="返回首页 / 退出房间">
+          <div>
+            <DropRoomLogo size="sm" onClick={onExit} />
+          </div>
+        </Tooltip>
       </div>
 
       {/* 成员标题 */}
       <div className="px-4 py-2.5 border-b border-[var(--dr-border)] shrink-0">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <TeamOutlined className="text-[#006EFF]" />
-          <span>成员</span>
-          <span className="text-xs font-normal text-[var(--dr-text-muted)]">
+        <div className="flex items-center justify-between text-sm font-medium">
+          <div className="flex items-center gap-2">
+            <TeamOutlined className="text-[#006EFF]" />
+            <span>成员列表</span>
+          </div>
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--dr-primary-soft)] text-[var(--dr-primary)]">
             {members.length} 人在线
           </span>
         </div>

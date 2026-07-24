@@ -24,6 +24,16 @@ interface RoomConfirmationOptions {
   deleteFile: (fileId: string) => Promise<boolean>;
 }
 
+/** 多人协作或上传期间离开时需要二次确认 */
+export function shouldConfirmRoomExit(room: RoomSnapshot | null) {
+  return (
+    (room?.onlineMemberCount ?? 0) > 2 ||
+    room?.items.some(
+      (item) => item.type === 'file' && item.status === 'uploading',
+    ) === true
+  );
+}
+
 /** 房间内高风险操作的确认文案与后续行为 */
 export function createRoomConfirmations({
   roomId,
@@ -36,14 +46,31 @@ export function createRoomConfirmations({
   deleteFile,
 }: RoomConfirmationOptions) {
   const exit = () => {
+    const memberCount = room?.onlineMemberCount ?? 0;
+    if (!shouldConfirmRoomExit(room)) {
+      void (async () => {
+        if (!(await leaveRoom())) return;
+        removeJoinedRoom(roomId);
+        navigateAfterLeave();
+      })();
+      return;
+    }
+
     const transfersOwnership =
-      room?.ownerMemberId === room?.currentMemberId &&
-      (room?.onlineMemberCount ?? 0) > 1;
+      room?.ownerMemberId === room?.currentMemberId && memberCount > 1;
+    const hasUploadingFile = room?.items.some(
+      (item) => item.type === 'file' && item.status === 'uploading',
+    );
     confirm({
       title: '退出这个房间？',
-      content: transfersOwnership
-        ? '退出后，房主权限会转交给当前在线且最早加入的成员。'
-        : '房间会从你的列表中移除，但其他成员仍可继续使用。',
+      content: [
+        hasUploadingFile ? '退出后，正在上传的文件会中断。' : '',
+        transfersOwnership
+          ? '房主权限会转交给当前在线且最早加入的成员。'
+          : memberCount > 2
+            ? '房间会从你的列表中移除，但其他成员仍可继续使用。'
+            : '',
+      ].join(''),
       okText: '退出',
       cancelText: '取消',
       onOk: async () => {

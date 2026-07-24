@@ -22,7 +22,10 @@ import { RoomComposer } from '../components/room/RoomComposer';
 import { RoomEditModals } from '../components/room/RoomEditModals';
 import { RoomAccessError } from '../components/room/RoomAccessError';
 import { RoomResizableLayout } from '../components/room/RoomResizableLayout';
-import { createRoomConfirmations } from '../components/room/roomConfirmations';
+import {
+  createRoomConfirmations,
+  shouldConfirmRoomExit,
+} from '../components/room/roomConfirmations';
 import { formatDuration } from '../utils/format';
 import { errorMessage } from '../api/client';
 import { joinRoomByCode } from '../utils/roomActions';
@@ -150,6 +153,21 @@ function RoomComponent() {
     cancelUpload,
     deleteFile,
   });
+
+  // 多人协作或上传期间关闭、刷新网页时提示
+  useEffect(() => {
+    if (!shouldConfirmRoomExit(room)) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [room]);
   if (syncError) {
     return (
       <>
@@ -196,15 +214,19 @@ function RoomComponent() {
     }
   };
 
-  const handleCopyInviteLink = () => {
+  const handleCopyInviteLink = async () => {
     const inviteUrl = new URL(
       `/room/${roomId}`,
       window.location.origin,
     ).toString();
-    void navigator.clipboard
-      .writeText(inviteUrl)
-      .then(() => messageApi.success('邀请链接已复制'))
-      .catch(() => messageApi.error('复制失败，请手动复制浏览器地址'));
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      messageApi.success('邀请链接已复制');
+      return true;
+    } catch {
+      messageApi.error('复制失败，请手动复制浏览器地址');
+      return false;
+    }
   };
 
   const memberPanel = (
