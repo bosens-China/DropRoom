@@ -44,14 +44,14 @@ describe('RoomCountdownRing', () => {
     await act(async () => root.unmount());
   });
 
-  it('两小时外只在 Tooltip 展示时间，同时保留文字宽度', async () => {
+  it('倒计时时间文本始终展示', async () => {
     await act(async () => {
       root.render(<RoomCountdownRing room={room} timeLeft={7_200} />);
     });
 
     const text = container.querySelector('span');
     expect(text?.classList.contains('w-[2.75rem]')).toBe(true);
-    expect(text?.classList.contains('invisible')).toBe(true);
+    expect(text?.textContent).toBe('2:00');
     expect(container.firstElementChild?.getAttribute('data-tooltip')).toBe(
       '房间剩余 2:00',
     );
@@ -60,7 +60,6 @@ describe('RoomCountdownRing', () => {
       root.render(<RoomCountdownRing room={room} timeLeft={7_199} />);
     });
     const visibleText = container.querySelector('span');
-    expect(visibleText?.classList.contains('visible')).toBe(true);
-    expect(visibleText?.classList.contains('invisible')).toBe(false);
+    expect(visibleText?.textContent).toBe('1:59');
   });
 });

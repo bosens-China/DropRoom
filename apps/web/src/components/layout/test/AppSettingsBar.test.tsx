@@ -16,6 +16,7 @@ vi.mock('antd', () => ({
 }));
 
 vi.mock('@ant-design/icons', () => ({
+  GithubOutlined: () => <span data-testid="github-icon" />,
   SettingOutlined: () => <span />,
 }));
 
@@ -139,5 +140,30 @@ describe('AppSettingsBar', () => {
 
     expect(requestPermission).toHaveBeenCalledOnce();
     expect(mocks.setBrowserNotificationsEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it('在 header 模式下不渲染 GitHub 源码链接', async () => {
+    await act(async () =>
+      root.render(<AppSettingsBar variant="header" nickname="测试用户" />),
+    );
+
+    const githubLink = container.querySelector<HTMLAnchorElement>(
+      'a[aria-label="GitHub 源码"]',
+    );
+    expect(githubLink).toBeNull();
+  });
+
+  it('在 embedded 模式下渲染 GitHub 源码链接', async () => {
+    await act(async () =>
+      root.render(<AppSettingsBar variant="embedded" nickname="测试用户" />),
+    );
+
+    const githubLink = container.querySelector<HTMLAnchorElement>(
+      'a[aria-label="GitHub 源码"]',
+    );
+    expect(githubLink).not.toBeNull();
+    expect(githubLink?.getAttribute('href')).toBe(
+      'https://github.com/bosens-China/DropRoom',
+    );
   });
 });
